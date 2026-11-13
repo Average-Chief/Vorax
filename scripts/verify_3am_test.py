@@ -122,3 +122,4 @@ if __name__ == "__main__":
                 os.remove("./test_3am.db")
             except Exception:
                 pass
+

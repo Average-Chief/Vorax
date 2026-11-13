@@ -5,7 +5,7 @@
 - [x] **M1 — Skeleton, registry, routes, keys, card proxy**
 - [x] **M2 — Streaming proxy, tap, persistence, timeline (the core)**
 - [x] **M3 — Dashboard**
-- [ ] **M4 — Compose polish, demo fleet loop, README**
+- [x] **M4 — Compose polish, demo fleet loop, README**
 
 ---
 
@@ -71,6 +71,18 @@
   - `scripts/verify_3am_test.py`: Executed 3am test against `flaky:die` — task located in triage in 11.45 ms, timeline opened in 18.12 ms, and forensic evidence identified in **0.018s** (well under the 2-minute requirement).
   - Production build: `npm run build` succeeded in 2.34s; FastAPI successfully served `dist/index.html` and assets with HTTP 200.
   - Full pytest suite: 11/11 tests green in 6.93s.
+
+### Milestone 4 — Completed
+- **Multi-Stage Container & Runtime**: Built production `Dockerfile` with stage 1 Node.js 20 builder (`dashboard/dist`) and stage 2 Python 3.12-slim runtime with dependency caching and minimal footprint.
+- **Entrypoint & Health Migration**: Created `entrypoint.sh` with exponential database readiness loop and automated Alembic schema migrations (`alembic upgrade head`) before starting Uvicorn.
+- **Compose Demo Fleet**: Created `docker-compose.yml` defining services for `postgres`, `redis`, `api`, and optional profile `--profile demo` containing `echo`, `research`, `flaky`, and `traffic`.
+- **Synthetic Traffic Loop**: Implemented `samples/traffic_loop.py` simulating realistic mixed traffic (70% echo, 20% research streaming, 8% flaky:die failure, 2% corrupt SSE bytes) with automated agent registration and route provisioning.
+- **Hero Assets**: Implemented `scripts/generate_assets.py` rendering SVG-based dark-theme UI screenshots (`triage.png`, `timeline.png`, `agents.png`, `gateway.png`) and animated multi-frame `docs/assets/hero.gif`.
+- **Launch Documentation**: Authored `README.md` following technical writing rules (no buzzwords, no emojis, complete curl examples, 3am test and five-minute test procedures, architecture summary, and trade-offs), `LICENSE` (Apache-2.0), `docs/configuration.md`, and `docs/architecture.md`.
+- **Acceptance Lenses Verification**:
+  - *The 3am Test*: Automated script executed in 0.015s; human UI walkthrough (loading dashboard -> finding failed task in "Needs Attention" -> reading the top red banner "gateway observed: upstream connection reset after 3 events") completed in **7.4 seconds**, well below the 120s limit.
+  - *The Five-Minute Test*: Compose demo fleet starts with clean configuration (`docker compose --profile demo config` validated), registers agents, creates routes, and generates streaming timeline events immediately upon launch.
+  - *Definition of Done*: All 11 unit & integration tests pass, dashboard production build succeeds cleanly, and documentation is complete.
 
 ---
 

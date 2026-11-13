@@ -115,3 +115,4 @@ export async function deleteKey(keyId: string): Promise<{ ok: boolean }> {
 export async function fetchStats(): Promise<StatsResponse> {
   return request<StatsResponse>('/control/stats');
 }
+

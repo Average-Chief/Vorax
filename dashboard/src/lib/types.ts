@@ -76,3 +76,4 @@ export interface WsTaskEvent {
   latency_ms?: number | null;
   observed_at?: string;
 }
+

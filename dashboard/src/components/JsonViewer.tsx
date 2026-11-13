@@ -47,3 +47,4 @@ export function JsonViewer({ data, initialExpanded = false }: JsonViewerProps) {
     </div>
   );
 }
+

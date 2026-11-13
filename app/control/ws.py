@@ -57,3 +57,4 @@ async def ws_endpoint(websocket: WebSocket):
             await websocket.close()
         except Exception:
             pass
+

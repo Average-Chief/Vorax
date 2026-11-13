@@ -280,3 +280,4 @@ export function GatewayPage() {
     </div>
   );
 }
+

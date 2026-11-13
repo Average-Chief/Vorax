@@ -125,3 +125,4 @@ def test_ws_fanout_live_and_reconnect():
 
             received_raw2 = ws2.receive_text()
             assert json.loads(received_raw2) == fake_event_2
+
