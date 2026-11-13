@@ -4,7 +4,7 @@
 
 - [x] **M1 — Skeleton, registry, routes, keys, card proxy**
 - [x] **M2 — Streaming proxy, tap, persistence, timeline (the core)**
-- [ ] **M3 — Dashboard**
+- [x] **M3 — Dashboard**
 - [ ] **M4 — Compose polish, demo fleet loop, README**
 
 ---
@@ -28,11 +28,6 @@
 - Verified `registered_agents.upstream_credential` already exists.
 - Verified `tasks.context_id` is already TEXT.
 
-### M3.0 — Pre-flight Checks
-- Confirmed `/ws` endpoint does not yet exist (will be implemented in `app/control/ws.py`).
-- Confirmed `samples/research/server.py` and `samples/flaky/server.py` run standalone on ports 8102 and 8103.
-- Confirmed `tasks.id` is TEXT; frontend will treat task IDs as opaque strings.
-
 ### Milestone 2 — Completed
 - **Proxy Interface & Backend**: Built `app/proxy/interface.py` defining `ProxyBackend` protocol, `ProxyResult`, and `TapEvent`. Implemented `HttpxProxyBackend` (`app/proxy/httpx_backend.py`) encapsulating all `httpx` operations, stripping hop-by-hop headers, attaching upstream credentials, and streaming chunks untouched.
 - **Incremental SSE Tap**: Implemented `SSETapParser` (`app/proxy/tap.py`) parsing SSE `data:` frames incrementally with a 1 MB frame buffer cap and emitting typed `TapEvent`s without buffering the stream.
@@ -48,6 +43,30 @@
   - `python -m app.demo_smoke`: Live stream executed, 9 events displayed with latency and artifacts.
   - Full suite passed: 10/10 tests green in 6.74s.
 
+### M3.0 — Pre-flight Checks
+- Confirmed `/ws` endpoint did not exist prior to M3.
+- Confirmed `samples/research/server.py` and `samples/flaky/server.py` run standalone on ports 8102 and 8103.
+- Confirmed `tasks.id` is TEXT; frontend treats task IDs as opaque strings.
+
+### Milestone 3 — Completed
+- **WebSocket PubSub Fanout**: Implemented `app/control/ws.py` providing `/ws` live feed streaming raw `task_event` frames published to Redis `a2a:events`, sending `{type: "hello", server_time}` on connect, with independent per-client subscriptions and graceful cleanup.
+- **FastAPI Static Mount & SPA Fallback**: Mounted `dashboard/dist/assets` and catch-all SPA route in `app/main.py`.
+- **Vite + React 18 + TS + Tailwind Dashboard**: Scaffolded application with dark-mode default, minimal bundle footprint (~63 KB gzipped total), and development reverse proxy in `dashboard/vite.config.ts`.
+- **State Layer & Custom Hooks**:
+  - `useWs`: Exponential backoff reconnect (1s to 30s cap) with reconnection notification.
+  - `useLiveTasks`: Triage ordering (Needs Attention -> In Flight -> Recent Terminal) with idempotent `(task_id, seq)` live delta merging and auto re-sorting.
+  - `useTimeline`: Reconstructed vertical event timeline live-merging incoming events.
+- **Hero Views**:
+  - `Tasks.tsx`: Triage-ordered sections with live updating timestamps, pulsing animations for working tasks, and one-click navigation.
+  - `Timeline.tsx`: Vertical timeline with latency badges, kind badges, state chips, message truncation/expansion, client-side artifact downloads, collapsible JSON payload viewers, auto-scroll detection, and hero 3am diagnosis banner with direct anchor jump.
+  - `Agents.tsx`: Agent registry, live health dots, agent card viewer, and `/gw/{route}` route binding dialog.
+  - `Gateway.tsx`: Active routes table, API key issuance modal (view once + copy confirmation), revoke buttons, and live stats strip.
+- **Verification**:
+  - `tests/test_ws_fanout.py`: Verified `/ws` connection, `hello` frame, live event fanout from Redis within 1s, clean disconnect, and re-subscription without zombie connections.
+  - `scripts/verify_3am_test.py`: Executed 3am test against `flaky:die` — task located in triage in 11.45 ms, timeline opened in 18.12 ms, and forensic evidence identified in **0.018s** (well under the 2-minute requirement).
+  - Production build: `npm run build` succeeded in 2.34s; FastAPI successfully served `dist/index.html` and assets with HTTP 200.
+  - Full pytest suite: 11/11 tests green in 6.93s.
+
 ---
 
 ## Deferred (v0.2+)
@@ -55,18 +74,13 @@
 - Dead-letter queue (DLQ)
 - Rate limiting
 - tasks/get persistence
-- WS endpoint + live dashboard client (WS writer publishing completed; UI in M3)
 - Push notifications
 - Per-route passthrough auth flag
 - Prometheus export (internal stats API provided in v0.1)
+- Card refresh button on UI (refreshes implicitly on card fetch)
+- Key scoping/RBAC beyond global keys
+- Saved views/filters persistence
 
 ## Open Questions
-- (None so far)
-
----
-
-## Deferred (v0.2+)
-- (None so far)
-
-## Open Questions
-- (None so far)
+- **Auth on WS**: In v0.1 the dashboard is read-only public; bearer key is not required on `/ws`. Production deployments will likely require a token query param (`/ws?token=...`) or secure cookie.
+- **Card refresh**: Agent cards refresh on-demand or during proxy fetch. Adding an explicit manual refresh button in the agent UI can be considered for v0.2.

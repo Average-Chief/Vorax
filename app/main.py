@@ -10,10 +10,14 @@ from app.config import settings
 from app.database import engine, Base, async_session_maker
 from app.models import ApiKey
 from app.auth import generate_api_key
+import os
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from app.control.agents import router as agents_router
 from app.control.routes_api import router as routes_router
 from app.control.keys import router as keys_router
 from app.control.tasks_api import router as tasks_router
+from app.control.ws import router as ws_router
 from app.proxy.card_api import router as proxy_card_router
 from app.proxy.gw_api import router as proxy_gw_router
 from app.ingest.writer import start_writer_task, stop_writer_task
@@ -78,6 +82,7 @@ def create_app() -> FastAPI:
     app.include_router(routes_router)
     app.include_router(keys_router)
     app.include_router(tasks_router)
+    app.include_router(ws_router)
 
     # Mount proxy routers
     app.include_router(proxy_card_router)
@@ -86,6 +91,19 @@ def create_app() -> FastAPI:
     @app.get("/healthz", tags=["health"])
     async def healthz():
         return {"status": "ok"}
+
+    # Mount dashboard static files if dist exists
+    dist_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "dashboard", "dist")
+    assets_dir = os.path.join(dist_dir, "assets")
+    if os.path.isdir(assets_dir):
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+
+    @app.get("/{full_path:path}")
+    async def spa_fallback(full_path: str):
+        index_file = os.path.join(dist_dir, "index.html")
+        if os.path.isfile(index_file):
+            return FileResponse(index_file)
+        return {"message": "A2A Gateway API is running. Build dashboard with 'npm run build' in dashboard/ to serve UI."}
 
     return app
 
