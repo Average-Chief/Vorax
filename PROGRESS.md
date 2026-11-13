@@ -22,6 +22,12 @@
   - `pytest tests/test_auth.py tests/test_control_agents.py` passed with 6/6 tests green.
   - Manual verification script `scripts/verify_m1.py` successfully registered `samples/echo` via `/control/agents`, configured route `/gw/echo`, and fetched its agent card through `/gw/echo/.well-known/agent-card.json`.
 
+### M2.0 — Pre-flight Schema Fixes
+- Changed `tasks.id` and `task_events.task_id` from UUID to TEXT to accept arbitrary upstream A2A task ID strings.
+- Added migration `9fed8b4de5f4_change_tasks_id_to_text.py`.
+- Verified `registered_agents.upstream_credential` already exists.
+- Verified `tasks.context_id` is already TEXT.
+
 ---
 
 ## Deferred (v0.2+)

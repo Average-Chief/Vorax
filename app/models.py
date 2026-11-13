@@ -56,7 +56,7 @@ class ApiKey(Base):
 class Task(Base):
     __tablename__ = "tasks"
 
-    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id: Mapped[str] = mapped_column(Text, primary_key=True)
     route_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid(as_uuid=True), ForeignKey("gateway_routes.id", ondelete="SET NULL"), nullable=True)
     context_id: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     current_state: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
@@ -76,7 +76,7 @@ class TaskEvent(Base):
     __tablename__ = "task_events"
 
     id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True, autoincrement=True)
-    task_id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), ForeignKey("tasks.id", ondelete="CASCADE"), nullable=False)
+    task_id: Mapped[str] = mapped_column(Text, ForeignKey("tasks.id", ondelete="CASCADE"), nullable=False)
     seq: Mapped[int] = mapped_column(Integer, nullable=False)
     source: Mapped[str] = mapped_column(Text, nullable=False)  # 'upstream' | 'gateway'
     kind: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # status-update | artifact-update | gateway.note | message
@@ -91,3 +91,4 @@ class TaskEvent(Base):
     __table_args__ = (
         Index("ix_task_events_task_id_seq", "task_id", "seq"),
     )
+
