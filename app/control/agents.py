@@ -1,7 +1,6 @@
 import uuid
 from datetime import datetime, timezone, timedelta
 from typing import Any, Optional
-import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, HttpUrl
 from sqlalchemy import select
@@ -11,6 +10,7 @@ from app.auth import require_control_key
 from app.config import settings
 from app.database import get_db
 from app.models import RegisteredAgent
+from app.proxy.httpx_backend import fetch_upstream_card
 
 router = APIRouter(prefix="/control/agents", tags=["agents"], dependencies=[Depends(require_control_key)])
 
@@ -41,25 +41,13 @@ class AgentDetail(BaseModel):
     upstream_credential: Optional[str] = None
     created_at: datetime
 
-async def fetch_upstream_card(endpoint_url: str) -> dict[str, Any]:
-    base_url = endpoint_url.rstrip("/")
-    candidates = [
-        f"{base_url}/.well-known/agent-card.json",
-        f"{base_url}/.well-known/agent.json",
-    ]
-    timeout = httpx.Timeout(settings.UPSTREAM_CONNECT_TIMEOUT_S)
-    async with httpx.AsyncClient(timeout=timeout) as client:
-        last_error = None
-        for url in candidates:
-            try:
-                resp = await client.get(url)
-                if resp.status_code == 200:
-                    return resp.json()
-            except Exception as e:
-                last_error = e
+async def get_agent_card_safe(endpoint_url: str) -> dict[str, Any]:
+    try:
+        return await fetch_upstream_card(endpoint_url)
+    except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"Failed to fetch agent card from upstream: {last_error or '404 Not Found'}",
+            detail=f"Failed to fetch agent card from upstream: {e}",
         )
 
 @router.post("", response_model=AgentDetail, status_code=status.HTTP_201_CREATED)
@@ -74,7 +62,7 @@ async def register_agent(
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Agent with this name already exists")
 
     # Fetch agent card
-    card = await fetch_upstream_card(payload.endpoint_url)
+    card = await get_agent_card_safe(payload.endpoint_url)
 
     agent = RegisteredAgent(
         id=uuid.uuid4(),

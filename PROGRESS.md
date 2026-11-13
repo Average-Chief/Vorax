@@ -3,7 +3,7 @@
 ## Milestone Status
 
 - [x] **M1 — Skeleton, registry, routes, keys, card proxy**
-- [ ] **M2 — Streaming proxy, tap, persistence, timeline (the core)**
+- [x] **M2 — Streaming proxy, tap, persistence, timeline (the core)**
 - [ ] **M3 — Dashboard**
 - [ ] **M4 — Compose polish, demo fleet loop, README**
 
@@ -27,6 +27,36 @@
 - Added migration `9fed8b4de5f4_change_tasks_id_to_text.py`.
 - Verified `registered_agents.upstream_credential` already exists.
 - Verified `tasks.context_id` is already TEXT.
+
+### Milestone 2 — Completed
+- **Proxy Interface & Backend**: Built `app/proxy/interface.py` defining `ProxyBackend` protocol, `ProxyResult`, and `TapEvent`. Implemented `HttpxProxyBackend` (`app/proxy/httpx_backend.py`) encapsulating all `httpx` operations, stripping hop-by-hop headers, attaching upstream credentials, and streaming chunks untouched.
+- **Incremental SSE Tap**: Implemented `SSETapParser` (`app/proxy/tap.py`) parsing SSE `data:` frames incrementally with a 1 MB frame buffer cap and emitting typed `TapEvent`s without buffering the stream.
+- **Data Plane Endpoint**: Created `POST /gw/{route}/` (`app/proxy/gw_api.py`) supporting unbuffered streaming (`message/stream`), JSON passthrough (`message/send`), verbatim error propagation (e.g. 401s), and connect/transport error handling.
+- **Background Event Ingestion**: Built `app/ingest/writer.py` and `app/ingest/events.py` consuming an bounded `asyncio.Queue` (max 10,000), assigning monotonic per-task `seq`, computing `latency_ms`, persisting append-only `task_events` and denormalized `tasks` in single atomic transactions, and publishing to Redis `a2a:events`.
+- **Control Plane Tasks API**: Implemented triage-ordered `GET /control/tasks` (failed/rejected/input-required first, in-flight next, terminal last), reconstructed `GET /control/tasks/{id}/timeline`, and `GET /control/stats`.
+- **Sample Fleet**: Built `samples/research/server.py` (streaming 6 status steps with 500ms intervals, artifact update, and completion) and `samples/flaky/server.py` (simulating mid-stream connection reset on `flaky:die`).
+- **Verification Suite**:
+  - `tests/test_proxy_streaming.py`: Verified client receives 9 events with unbuffered median gap in [400, 700]ms (observed ~500.6ms) and all events persisted in DB.
+  - `tests/test_timeline_persistence.py::test_reconstruct_after_restart`: Verified `flaky:die` mid-stream failure, in-process FastAPI restart with fresh engine/writer, and successful timeline reconstruction including synthetic `gateway.note`.
+  - `tests/test_upstream_401_passthrough.py`: Verified upstream 401 error is proxied verbatim and recorded as a `gateway.note` event.
+  - `tests/test_message_send_persistence.py`: Verified non-streaming `message/send` task and artifact persistence.
+  - `python -m app.demo_smoke`: Live stream executed, 9 events displayed with latency and artifacts.
+  - Full suite passed: 10/10 tests green in 6.74s.
+
+---
+
+## Deferred (v0.2+)
+- Retries with backoff
+- Dead-letter queue (DLQ)
+- Rate limiting
+- tasks/get persistence
+- WS endpoint + live dashboard client (WS writer publishing completed; UI in M3)
+- Push notifications
+- Per-route passthrough auth flag
+- Prometheus export (internal stats API provided in v0.1)
+
+## Open Questions
+- (None so far)
 
 ---
 

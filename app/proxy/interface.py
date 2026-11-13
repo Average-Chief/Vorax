@@ -1,3 +1,4 @@
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import AsyncIterator, Callable, Protocol, Optional, Any
@@ -13,6 +14,7 @@ class TapEvent:
     is_final: Optional[bool]
     raw: dict[str, Any]
     source: str = "upstream"  # 'upstream' | 'gateway'
+    route_id: Optional[uuid.UUID] = None
     observed_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     latency_ms: Optional[int] = None
 

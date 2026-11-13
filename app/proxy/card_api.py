@@ -1,5 +1,4 @@
 from typing import Any
-import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,6 +9,7 @@ from app.proxy.deps import (
     get_cached_agent_card,
     set_cached_agent_card,
 )
+from app.proxy.httpx_backend import fetch_upstream_card
 
 router = APIRouter(prefix="/gw", tags=["proxy"])
 
@@ -27,22 +27,11 @@ async def get_agent_card(
         return cached
 
     # Attempt upstream refresh
-    base_url = resolved.endpoint_url.rstrip("/")
-    candidates = [
-        f"{base_url}/.well-known/agent-card.json",
-        f"{base_url}/.well-known/agent.json",
-    ]
     card = None
-    timeout = httpx.Timeout(settings.UPSTREAM_CONNECT_TIMEOUT_S)
-    async with httpx.AsyncClient(timeout=timeout) as client:
-        for url in candidates:
-            try:
-                resp = await client.get(url)
-                if resp.status_code == 200:
-                    card = resp.json()
-                    break
-            except Exception:
-                continue
+    try:
+        card = await fetch_upstream_card(resolved.endpoint_url)
+    except Exception:
+        pass
 
     if card is not None:
         set_cached_agent_card(route, card)

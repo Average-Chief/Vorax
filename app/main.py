@@ -13,7 +13,10 @@ from app.auth import generate_api_key
 from app.control.agents import router as agents_router
 from app.control.routes_api import router as routes_router
 from app.control.keys import router as keys_router
+from app.control.tasks_api import router as tasks_router
 from app.proxy.card_api import router as proxy_card_router
+from app.proxy.gw_api import router as proxy_gw_router
+from app.ingest.writer import start_writer_task, stop_writer_task
 
 logging.basicConfig(level=getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO))
 logger = logging.getLogger("a2a.gateway")
@@ -45,8 +48,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             logger.info("Use this key with 'Authorization: Bearer <key>' to access control plane.")
             logger.info("============================================================")
 
+    # Start ingest writer task
+    writer_task = start_writer_task()
+
     yield
+
     logger.info("Shutting down A2A Gateway...")
+    await stop_writer_task()
     await engine.dispose()
 
 def create_app() -> FastAPI:
@@ -69,9 +77,11 @@ def create_app() -> FastAPI:
     app.include_router(agents_router)
     app.include_router(routes_router)
     app.include_router(keys_router)
+    app.include_router(tasks_router)
 
     # Mount proxy routers
     app.include_router(proxy_card_router)
+    app.include_router(proxy_gw_router)
 
     @app.get("/healthz", tags=["health"])
     async def healthz():
