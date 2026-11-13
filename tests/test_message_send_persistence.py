@@ -77,3 +77,4 @@ async def test_message_send_persistence(client: AsyncClient, admin_headers: dict
         assert ev.is_final is True
         assert "artifacts" in ev.payload["result"]
         assert ev.payload["result"]["artifacts"][0]["name"] == "echo"
+

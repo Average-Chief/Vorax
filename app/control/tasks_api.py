@@ -151,3 +151,4 @@ async def get_stats(
         orphan_errors=stats["orphan_errors"],
         uptime_seconds=round(uptime, 1),
     )
+

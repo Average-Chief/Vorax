@@ -120,3 +120,4 @@ async def test_upstream_401_passthrough(client: AsyncClient, admin_headers: dict
         assert len(events) >= 1
         note_event = events[-1]
         assert note_event.payload.get("detail") == "upstream rejected credential"
+

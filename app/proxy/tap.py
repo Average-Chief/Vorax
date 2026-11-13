@@ -166,3 +166,4 @@ class SSETapParser:
                     source="upstream",
                 )
             )
+

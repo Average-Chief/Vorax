@@ -27,3 +27,4 @@ def create_gateway_note_event(
         source="gateway",
         observed_at=datetime.now(timezone.utc),
     )
+
