@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+env/
+venv/
+ENV/
+
+# Testing & linting
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dashboard/dist/
+
+# Database / local files
+*.db
+*.sqlite3
+test.db
+
+# Environments
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db

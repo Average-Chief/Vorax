@@ -1,0 +1,33 @@
+[project]
+name = "a2a-gateway"
+version = "0.1.0"
+description = "The easiest self-hosted way to put all your A2A agents behind one secure, observable endpoint."
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "Apache-2.0"}
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
+    "httpx>=0.27.0",
+    "sqlalchemy[asyncio]>=2.0.0",
+    "asyncpg>=0.29.0",
+    "aiosqlite>=0.20.0",
+    "alembic>=1.13.0",
+    "redis>=5.0.0",
+    "pydantic>=2.7.0",
+    "pydantic-settings>=2.2.0",
+    "bcrypt>=4.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+python_files = "test_*.py"
+pythonpath = ["."]
