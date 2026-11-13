@@ -29,7 +29,17 @@ async def get_card():
 
 @app.post("/")
 async def handle_rpc(request: Request):
-    payload = await request.json()
+    try:
+        payload = await request.json()
+    except Exception:
+        return JSONResponse(
+            status_code=400,
+            content={
+                "jsonrpc": "2.0",
+                "id": None,
+                "error": {"code": -32700, "message": "Parse error: invalid JSON payload"},
+            },
+        )
     req_id = payload.get("id", 1)
     method = payload.get("method")
     params = payload.get("params", {})
