@@ -159,6 +159,26 @@ async def handle_rpc(request: Request):
             headers={"Cache-Control": "no-cache"},
         )
 
+    if method == "message/send":
+        return {
+            "jsonrpc": "2.0",
+            "id": req_id,
+            "result": {
+                "id": task_id,
+                "contextId": context_id,
+                "kind": "task",
+                "status": {"state": "completed", "timestamp": datetime.now(timezone.utc).isoformat()},
+                "artifacts": [
+                    {
+                        "artifactId": f"art-{task_id[:8]}",
+                        "name": "research_report.md",
+                        "parts": [{"kind": "text", "text": "# Research Report\n\nInstant research summary."}],
+                    }
+                ],
+                "history": [],
+            },
+        }
+
     return {
         "jsonrpc": "2.0",
         "id": req_id,

@@ -48,6 +48,11 @@
 - Confirmed `samples/research/server.py` and `samples/flaky/server.py` run standalone on ports 8102 and 8103.
 - Confirmed `tasks.id` is TEXT; frontend treats task IDs as opaque strings.
 
+### M4.0 — Pre-flight Checks
+- Demo fleet inventory confirmed: `samples/echo`, `samples/research`, `samples/flaky` all start standalone and cleanly handle both `message/send` and `message/stream`.
+- Confirmed README.md will be created fresh per the launch artifact structure.
+- Prepared for full Compose multi-stage build and manual 3am test validation.
+
 ### Milestone 3 — Completed
 - **WebSocket PubSub Fanout**: Implemented `app/control/ws.py` providing `/ws` live feed streaming raw `task_event` frames published to Redis `a2a:events`, sending `{type: "hello", server_time}` on connect, with independent per-client subscriptions and graceful cleanup.
 - **FastAPI Static Mount & SPA Fallback**: Mounted `dashboard/dist/assets` and catch-all SPA route in `app/main.py`.
