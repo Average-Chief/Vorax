@@ -69,3 +69,4 @@ def get_cached_agent_card(key: str) -> Optional[dict[str, Any]]:
 def set_cached_agent_card(key: str, card: dict[str, Any]) -> None:
     now = time.monotonic()
     _card_cache[key] = (now + settings.CARD_CACHE_TTL_S, card)
+

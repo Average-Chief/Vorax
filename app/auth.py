@@ -82,3 +82,4 @@ async def require_control_key(
             headers={"WWW-Authenticate": "Bearer"},
         )
     return token
+

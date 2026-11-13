@@ -87,3 +87,4 @@ async def delete_key(
     await db.commit()
     invalidate_key_cache()
     return {"ok": True}
+

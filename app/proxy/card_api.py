@@ -54,3 +54,4 @@ async def get_agent_card(
         return resolved.agent_card
 
     raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Unable to fetch agent card from upstream")
+

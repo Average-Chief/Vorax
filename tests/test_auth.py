@@ -51,3 +51,4 @@ async def test_auth_issued_key_and_revocation(client: AsyncClient, admin_headers
     # Verify revoked key fails immediately
     resp_after = await client.get("/control/agents", headers=client_headers)
     assert resp_after.status_code == 401
+

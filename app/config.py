@@ -15,3 +15,4 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "info"
 
 settings = Settings()
+
