@@ -28,6 +28,11 @@
 - Verified `registered_agents.upstream_credential` already exists.
 - Verified `tasks.context_id` is already TEXT.
 
+### M3.0 — Pre-flight Checks
+- Confirmed `/ws` endpoint does not yet exist (will be implemented in `app/control/ws.py`).
+- Confirmed `samples/research/server.py` and `samples/flaky/server.py` run standalone on ports 8102 and 8103.
+- Confirmed `tasks.id` is TEXT; frontend will treat task IDs as opaque strings.
+
 ### Milestone 2 — Completed
 - **Proxy Interface & Backend**: Built `app/proxy/interface.py` defining `ProxyBackend` protocol, `ProxyResult`, and `TapEvent`. Implemented `HttpxProxyBackend` (`app/proxy/httpx_backend.py`) encapsulating all `httpx` operations, stripping hop-by-hop headers, attaching upstream credentials, and streaming chunks untouched.
 - **Incremental SSE Tap**: Implemented `SSETapParser` (`app/proxy/tap.py`) parsing SSE `data:` frames incrementally with a 1 MB frame buffer cap and emitting typed `TapEvent`s without buffering the stream.
