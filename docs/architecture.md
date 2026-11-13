@@ -78,3 +78,4 @@ Consider an in-flight research task streaming multiple steps when the gateway pr
 3. Upon gateway restart, the database contains all prior events intact.
 4. Calling `/control/tasks/{id}/timeline` immediately reconstructs the exact state of the task up to the interruption, including the forensic evidence of where and why the connection died.
 5. In-flight history survives restarts by design without requiring distributed transaction locks.
+

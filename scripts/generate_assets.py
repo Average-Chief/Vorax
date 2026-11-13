@@ -349,3 +349,4 @@ if __name__ == "__main__":
     generate_agents_screenshot()
     generate_gateway_screenshot()
     generate_hero_gif()
+

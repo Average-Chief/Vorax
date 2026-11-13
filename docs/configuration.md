@@ -60,3 +60,4 @@ When starting A2A Gateway for the first time without an explicit `ADMIN_KEY` con
    ============================================================
    ```
 3. Copy this key immediately. Use it to log in to the dashboard or configure `ADMIN_KEY` in your `.env` or `docker-compose.yml` for subsequent restarts.
+

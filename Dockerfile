@@ -38,3 +38,4 @@ COPY --from=dashboard-builder /dashboard/dist ./dashboard/dist
 EXPOSE 8000
 
 ENTRYPOINT ["/app/entrypoint.sh"]
+

@@ -25,3 +25,4 @@ fi
 echo "Database migrations applied successfully."
 echo "Starting Uvicorn server on 0.0.0.0:8000..."
 exec uvicorn app.main:app --host 0.0.0.0 --port 8000
+
