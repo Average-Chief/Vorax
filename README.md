@@ -154,7 +154,7 @@ PostgreSQL is the durable source of truth. The in-memory queue is a performance 
 ## Security Boundaries & Limitations
 
 - **Gateway Bearer Keys:** Hashed using bcrypt with prefix tracking (`a2a_live_...`) and cached in-memory for 5 seconds. Revocations invalidate the local cache immediately.
-- **Upstream Agent Credentials (v0.1 Non-Production Limitation):** Upstream credentials (`registered_agents.upstream_credential`) are stored as plaintext columns in PostgreSQL in v0.1 to allow forwarding on outbound hops. Do not expose this version to networks holding sensitive production secrets. Application-level envelope encryption (AES-256-GCM with external KMS, key rotation, and nonce uniqueness) is a prerequisite for production v0.2.
+- **Upstream Agent Credentials (v0.1 Non-Production Limitation):** Upstream credentials are stored in plaintext in PostgreSQL in v0.1. Envelope encryption (AES-256-GCM + external KMS) is on the v0.2 roadmap. Do not deploy v0.1 with shared or multi-tenant access to the database.
 - **Development Key Warning:** The bundled key (`dev-only-do-not-use-in-prod`) is for local testing only. Change `ADMIN_KEY` before exposing the gateway to any non-loopback interface.
 
 ---
