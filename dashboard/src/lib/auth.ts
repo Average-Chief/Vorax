@@ -75,3 +75,4 @@ export function changeAdminPassword(
 export function logoutDashboard(): void {
   localStorage.removeItem(SESSION_KEY);
 }
+
