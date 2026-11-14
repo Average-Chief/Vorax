@@ -107,7 +107,18 @@
 
 ---
 
-## Deferred (v0.2+)
+## Next Milestone — Competitor Bake-Off
+
+**Feature freeze in effect: No new product features until this experiment completes.**
+
+1. **Independent Test Fleet:** Standardized mock/live agents for echo, 6-step streaming, chaos disconnects (`flaky:die`), and auth.
+2. **Standardized Harness:** Run identical test matrices against A2A Gateway, agentgateway, and ContextForge (plus Envoy with a documented observability setup).
+3. **Failure Isolation:** Test upstream network drops and hard gateway process crashes (`SIGKILL`) separately.
+4. **Primary Evaluation Metric:** Time to reconstruct a failed A2A task from gateway-visible evidence, partial stream retention, failure provenance, and operator effort.
+5. **Transparency:** Publish full results under `scripts/bench/`, including areas where competitors match or outperform A2A Gateway.
+
+## Deferred (Post-Experiment v0.2+)
+- Application-level credential envelope encryption (AES-256-GCM + external KMS)
 - Retries with backoff
 - Dead-letter queue (DLQ)
 - Rate limiting

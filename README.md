@@ -4,6 +4,19 @@
 
 A2A Gateway is a self-hosted control plane and reverse proxy engineered for Agent-to-Agent (A2A) JSON-RPC protocol communication. Callers send tasks to a single endpoint using one gateway API key, and the gateway proxies requests directly to upstream agents without buffering streaming chunks. Every status transition, streaming SSE event, artifact, and connection failure is recorded and displayed on an integrated live dashboard.
 
+> **The gateway doesn't just tell you that an agent failed. It shows you what happened before it failed.**
+
+```text
+14:32:01.102  TASK SUBMITTED
+14:32:01.245  AGENT ACCEPTED TASK
+14:32:02.010  STATUS: WORKING
+14:32:03.418  STATUS: WORKING
+14:32:04.201  ARTIFACT RECEIVED
+14:32:05.008  UPSTREAM CONNECTION RESET
+14:32:05.013  GATEWAY NOTE: Connection lost after 5 events
+```
+*(Illustrative trace demonstrating partial event retention prior to connection drop)*
+
 <p align="center">
   <img src="docs/assets/hero.gif" alt="A2A Gateway Demo" width="800" />
 </p>
@@ -127,11 +140,11 @@ All forwarding logic is encapsulated behind the `ProxyBackend` protocol in `app/
 A2A Gateway uses asynchronous write-behind persistence to minimize latency on the streaming hot path:
 
 - **Upstream failures:** When an upstream agent disconnects, resets its connection, or times out, the gateway stops accepting new upstream events, drains previously captured events from the FIFO queue into PostgreSQL, and records a synthetic `gateway.note` describing the failure. This preserves the captured event history, provided PostgreSQL remains available and the gateway process remains alive long enough to complete the drain.
-- **Graceful gateway shutdown:** On `SIGTERM`, the gateway stops accepting new inbound work and executes a 5-second drain loop on pending in-memory events before exiting.
+- **Graceful gateway shutdown:** On `SIGTERM`, the gateway stops accepting new inbound work and executes a 5-second drain loop on pending in-memory events before exiting. Note that this 5-second window is an operational timeout to prevent hung processes, not an infinite durability guarantee; if database persistence takes longer than 5 seconds, the process exits and pending events are abandoned.
 - **Abrupt gateway termination:** An ungraceful process termination, including `SIGKILL`, can result in the loss of events that have not yet been committed to PostgreSQL.
 - **Queue backpressure:** The in-memory buffer is bounded (`EVENT_QUEUE_MAXSIZE=10000`). If saturated under extreme write loads, events are dropped with `stats["dropped_events"]` incremented to prevent stalling upstream HTTP streams.
 - **Redis failure:** Redis is used exclusively for ephemeral dashboard event distribution. Its unavailability does not affect PostgreSQL event durability or upstream proxying.
-- **Database failure:** Events awaiting persistence cannot be considered durable. When PostgreSQL is unreachable, the gateway logs write failures and continues streaming in degraded mode.
+- **Database failure (Degraded mode):** Events awaiting persistence cannot be considered durable. When PostgreSQL is unreachable or failing, the gateway prioritizes caller availability by logging write errors and continuing to stream chunks, but timeline history is not persisted (resulting in partial timelines).
 - **Observation boundary:** The gateway reconstructs what it observed over the wire across the A2A JSON-RPC transport. It cannot reconstruct internal agent reasoning, scratchpads, or unexposed tool executions that were never emitted in protocol frames.
 
 PostgreSQL is the durable source of truth. The in-memory queue is a performance optimisation, not a durable message broker.
@@ -141,7 +154,7 @@ PostgreSQL is the durable source of truth. The in-memory queue is a performance 
 ## Security Boundaries & Limitations
 
 - **Gateway Bearer Keys:** Hashed using bcrypt with prefix tracking (`a2a_live_...`) and cached in-memory for 5 seconds. Revocations invalidate the local cache immediately.
-- **Upstream Agent Credentials (v0.1 Limitation):** Upstream credentials (`registered_agents.upstream_credential`) are stored as plaintext columns in PostgreSQL to allow forwarding on outbound hops. Restrict database access accordingly. Application-level envelope encryption (AES-256-GCM with external key management) is scheduled for v0.2.
+- **Upstream Agent Credentials (v0.1 Non-Production Limitation):** Upstream credentials (`registered_agents.upstream_credential`) are stored as plaintext columns in PostgreSQL in v0.1 to allow forwarding on outbound hops. Do not expose this version to networks holding sensitive production secrets. Application-level envelope encryption (AES-256-GCM with external KMS, key rotation, and nonce uniqueness) is a prerequisite for production v0.2.
 - **Development Key Warning:** The bundled key (`dev-only-do-not-use-in-prod`) is for local testing only. Change `ADMIN_KEY` before exposing the gateway to any non-loopback interface.
 
 ---
@@ -164,11 +177,19 @@ Designed for teams running hundreds to low-thousands of tasks per minute. Not op
 
 ---
 
-## Roadmap
+## Next Milestone — Competitor Bake-Off
 
-The following capabilities are deferred for future releases:
-- Head-to-head empirical benchmark against agentgateway and Envoy + ext-proc (v0.2 milestone)
-- Reproducible wrk / k6 benchmark suite under `scripts/bench/` (v0.2 milestone)
+**No new product features will be added until this experiment is complete.**
+
+1. **Independent Test Fleet:** Build standardized test agents (instant echo, 6-step streaming, chaos failure, and authenticated).
+2. **Standardized Harness:** Run identical test matrices against A2A Gateway, agentgateway, and ContextForge (alongside Envoy with a documented observability setup).
+3. **Failure Isolation:** Test upstream connection termination and hard gateway process crashes (`SIGKILL`) independently.
+4. **Core Evaluation Metric:** Measure time to reconstruct a failed A2A task from gateway-visible evidence, partial stream retention, failure provenance, and operator effort.
+5. **Transparent Reporting:** Publish complete results under `scripts/bench/`, explicitly including areas where A2A Gateway loses or matches competitors.
+
+### Deferred Capabilities (Post-Experiment v0.2+)
+- Application-level credential envelope encryption (AES-256-GCM + external KMS)
+- Reproducible wrk / k6 benchmark suite under `scripts/bench/`
 - Automatic retries with exponential backoff
 - Dead-letter queue (DLQ) inspection interface
 - Per-route rate limiting
