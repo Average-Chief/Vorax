@@ -13,17 +13,15 @@ import {
   Network,
   Layers,
   Key,
-  Shield,
   Radio,
   Activity,
   Boxes,
   Zap,
   Globe,
-  CheckCircle2,
   AlertTriangle,
   ArrowRight,
-  ExternalLink,
-  Code2,
+  RefreshCw,
+  Cpu,
 } from 'lucide-react';
 import { useWs } from './hooks/useWs';
 import { useLiveTasks } from './hooks/useLiveTasks';
@@ -44,18 +42,18 @@ export function App() {
   const [showCliModal, setShowCliModal] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showServicesMenu, setShowServicesMenu] = useState(false);
-  const [showRegionMenu, setShowRegionMenu] = useState(false);
+  const [showEnvMenu, setShowEnvMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
-  const [selectedRegion, setSelectedRegion] = useState('Asia Pacific (Mumbai)');
+  const [selectedEnv, setSelectedEnv] = useState('Local Docker Fleet (Port 8000)');
 
   const { status: wsStatus } = useWs();
   const { tasks, loading } = useLiveTasks();
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Keyboard shortcut listener for Option+S or Cmd+K
+  // Shortcut for Option+S or Cmd+K
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.altKey && (e.key === 's' || e.key === 'S')) || ((e.metaKey || e.ctrlKey) && e.key === 'k')) {
@@ -66,7 +64,7 @@ export function App() {
         setSearchOpen(false);
         setShowServicesMenu(false);
         setShowNotifications(false);
-        setShowRegionMenu(false);
+        setShowEnvMenu(false);
         setShowUserMenu(false);
       }
     };
@@ -81,48 +79,52 @@ export function App() {
     window.location.reload();
   };
 
-  const failedTasks = tasks.filter((t) => (t.current_state || '').toLowerCase() === 'failed');
+  const failedTasks = tasks.filter((t) => {
+    const s = (t.current_state || '').toLowerCase();
+    return ['failed', 'rejected', 'input-required'].includes(s);
+  });
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#0f141c] text-slate-100 font-sans selection:bg-[#ec7211] selection:text-white">
-      {/* 1. Global AWS Management Console Top Bar */}
-      <header className="h-10 bg-[#131924] border-b border-[#253246] px-3 flex items-center justify-between text-xs select-none sticky top-0 z-50">
-        {/* Left Side: AWS Logo + Services Menu + Search */}
+    <div className="min-h-screen flex flex-col bg-[#0b0f17] text-slate-100 font-sans selection:bg-indigo-600 selection:text-white">
+      {/* 1. Cloud-Console Style Top Navigation Bar */}
+      <header className="h-11 bg-[#101622] border-b border-[#1e293b] px-3 flex items-center justify-between text-xs select-none sticky top-0 z-50">
+        {/* Left Side: Brand Logo + Services Menu + Search */}
         <div className="flex items-center gap-3">
-          {/* AWS Logo with signature orange curve */}
+          {/* A2A Gateway Logo */}
           <div
             onClick={() => {
               setSelectedTaskId(null);
               setActiveTab('home');
             }}
-            className="flex items-center gap-1.5 cursor-pointer group px-1 py-0.5 rounded hover:bg-slate-800 transition-colors"
-            title="AWS Management Console Home"
+            className="flex items-center gap-2 cursor-pointer group px-1 py-0.5 rounded hover:bg-slate-800 transition-colors"
+            title="A2A Gateway Console Home"
           >
-            <div className="relative font-black tracking-tighter text-white text-base leading-none">
-              <span>aws</span>
-              <svg className="w-5 h-1.5 -mt-0.5 text-[#ec7211]" viewBox="0 0 24 6" fill="none">
-                <path d="M1 1C7 4.5 17 4.5 23 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
+            <div className="w-6 h-6 rounded bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center font-black text-white text-[11px] shadow-sm tracking-wider">
+              A2A
+            </div>
+            <div className="flex items-baseline gap-1.5">
+              <span className="font-bold text-white text-sm tracking-tight">Gateway</span>
+              <span className="text-[10px] text-slate-400 font-mono">v0.1</span>
             </div>
           </div>
 
-          {/* 9-dot Services Menu Button */}
+          {/* Quick Services Menu */}
           <div className="relative">
             <button
               onClick={() => setShowServicesMenu(!showServicesMenu)}
               className={`p-1.5 rounded transition-colors flex items-center justify-center ${
-                showServicesMenu ? 'bg-[#253246] text-white' : 'text-slate-400 hover:text-white hover:bg-[#1a2332]'
+                showServicesMenu ? 'bg-[#1e293b] text-white' : 'text-slate-400 hover:text-white hover:bg-[#162030]'
               }`}
-              title="Services"
+              title="Gateway Services & Routes"
             >
               <LayoutGrid size={15} />
             </button>
 
             {/* Services Dropdown */}
             {showServicesMenu && (
-              <div className="absolute left-0 mt-2 w-72 bg-[#161f2e] border border-[#2b3a50] rounded-lg shadow-2xl py-2 z-50">
+              <div className="absolute left-0 mt-2 w-72 bg-[#111724] border border-[#1e293b] rounded-lg shadow-2xl py-2 z-50">
                 <div className="px-3 py-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-800">
-                  A2A Gateway & AWS Services
+                  Gateway Control Plane
                 </div>
                 <div className="py-1">
                   <button
@@ -138,7 +140,7 @@ export function App() {
                     </div>
                     <div>
                       <div className="font-semibold text-xs text-white">Console Home</div>
-                      <div className="text-[10px] text-slate-400">AWS Console widgets & overview</div>
+                      <div className="text-[10px] text-slate-400">Modular widgets & telemetry overview</div>
                     </div>
                   </button>
 
@@ -150,12 +152,12 @@ export function App() {
                     }}
                     className="w-full px-3 py-2 text-left hover:bg-slate-800 flex items-center gap-2.5 text-slate-200"
                   >
-                    <div className="w-5 h-5 rounded bg-pink-600 flex items-center justify-center text-white text-[10px]">
+                    <div className="w-5 h-5 rounded bg-cyan-600 flex items-center justify-center text-white text-[10px]">
                       <Activity size={12} />
                     </div>
                     <div>
-                      <div className="font-semibold text-xs text-white">CloudWatch Tasks & Triage</div>
-                      <div className="text-[10px] text-slate-400">Live triage feed & state updates</div>
+                      <div className="font-semibold text-xs text-white">Tasks Triage & Live Feed</div>
+                      <div className="text-[10px] text-slate-400">Streamed task states & priority sorting</div>
                     </div>
                   </button>
 
@@ -167,12 +169,12 @@ export function App() {
                     }}
                     className="w-full px-3 py-2 text-left hover:bg-slate-800 flex items-center gap-2.5 text-slate-200"
                   >
-                    <div className="w-5 h-5 rounded bg-orange-600 flex items-center justify-center text-white text-[10px]">
+                    <div className="w-5 h-5 rounded bg-amber-600 flex items-center justify-center text-white text-[10px]">
                       <Boxes size={12} />
                     </div>
                     <div>
-                      <div className="font-semibold text-xs text-white">ECR & Agent Registry</div>
-                      <div className="text-[10px] text-slate-400">Echo, Research, and Flaky agents</div>
+                      <div className="font-semibold text-xs text-white">Upstream Agent Registry</div>
+                      <div className="text-[10px] text-slate-400">Echo, Research, and Flaky agent cards</div>
                     </div>
                   </button>
 
@@ -184,12 +186,12 @@ export function App() {
                     }}
                     className="w-full px-3 py-2 text-left hover:bg-slate-800 flex items-center gap-2.5 text-slate-200"
                   >
-                    <div className="w-5 h-5 rounded bg-rose-600 flex items-center justify-center text-white text-[10px]">
-                      <Zap size={12} />
+                    <div className="w-5 h-5 rounded bg-emerald-600 flex items-center justify-center text-white text-[10px]">
+                      <Network size={12} />
                     </div>
                     <div>
-                      <div className="font-semibold text-xs text-white">Amplify & Routes Registry</div>
-                      <div className="text-[10px] text-slate-400">Proxy routes & API keys</div>
+                      <div className="font-semibold text-xs text-white">Gateway Routes & API Keys</div>
+                      <div className="text-[10px] text-slate-400">Path segments & bcrypt token management</div>
                     </div>
                   </button>
                 </div>
@@ -204,26 +206,26 @@ export function App() {
                 setSearchOpen(true);
                 setTimeout(() => searchInputRef.current?.focus(), 50);
               }}
-              className="flex items-center gap-2 w-48 sm:w-72 md:w-96 h-7 px-2.5 rounded bg-[#101622] hover:bg-[#151d2d] border border-[#2b3a50] text-slate-400 cursor-pointer transition-colors"
+              className="flex items-center gap-2 w-48 sm:w-72 md:w-80 h-7 px-2.5 rounded bg-[#0d121b] hover:bg-[#141b27] border border-[#1e293b] text-slate-400 cursor-pointer transition-colors"
             >
               <Search size={13} className="text-slate-400 shrink-0" />
               <input
                 ref={searchInputRef}
                 type="text"
-                placeholder="Search"
+                placeholder="Search tasks, agents, routes..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => setSearchOpen(true)}
                 className="bg-transparent text-xs text-white placeholder-slate-400 focus:outline-none w-full"
               />
-              <span className="text-[10px] font-mono text-slate-400 bg-[#1e2738] border border-slate-700/80 px-1 py-0.2 rounded shrink-0">
+              <span className="text-[10px] font-mono text-slate-400 bg-[#162030] border border-slate-700/80 px-1 py-0.2 rounded shrink-0">
                 [Option+S]
               </span>
             </div>
 
-            {/* Quick Search Results Dropdown */}
+            {/* Quick Search Palette */}
             {searchOpen && (
-              <div className="absolute left-0 mt-1.5 w-full bg-[#161f2e] border border-[#2b3a50] rounded-lg shadow-2xl py-2 z-50">
+              <div className="absolute left-0 mt-1.5 w-full bg-[#111724] border border-[#1e293b] rounded-lg shadow-2xl py-2 z-50">
                 <div className="px-3 py-1 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
                   Quick Navigation
                 </div>
@@ -236,8 +238,8 @@ export function App() {
                     }}
                     className="px-3 py-1.5 hover:bg-slate-800 text-xs text-slate-200 cursor-pointer flex items-center justify-between"
                   >
-                    <span>Tasks & Triage Stream</span>
-                    <span className="text-[10px] text-blue-400">CloudWatch</span>
+                    <span>Tasks Triage Stream</span>
+                    <span className="text-[10px] text-cyan-400">Triage Feed</span>
                   </div>
                   <div
                     onClick={() => {
@@ -248,7 +250,7 @@ export function App() {
                     className="px-3 py-1.5 hover:bg-slate-800 text-xs text-slate-200 cursor-pointer flex items-center justify-between"
                   >
                     <span>Registered Upstream Agents</span>
-                    <span className="text-[10px] text-orange-400">ECR</span>
+                    <span className="text-[10px] text-amber-400">Agent Cards</span>
                   </div>
                   <div
                     onClick={() => {
@@ -258,8 +260,8 @@ export function App() {
                     }}
                     className="px-3 py-1.5 hover:bg-slate-800 text-xs text-slate-200 cursor-pointer flex items-center justify-between"
                   >
-                    <span>Active Gateway Routes & API Keys</span>
-                    <span className="text-[10px] text-rose-400">Amplify</span>
+                    <span>Gateway Routes & Keys</span>
+                    <span className="text-[10px] text-emerald-400">Control Plane</span>
                   </div>
                   {tasks.slice(0, 3).map((t) => (
                     <div
@@ -271,7 +273,7 @@ export function App() {
                       className="px-3 py-1.5 hover:bg-slate-800 text-xs text-slate-200 cursor-pointer flex items-center justify-between"
                     >
                       <span className="font-mono text-[11px] truncate">{t.id}</span>
-                      <span className="text-[10px] text-emerald-400">Timeline</span>
+                      <span className="text-[10px] text-blue-400">Open Timeline</span>
                     </div>
                   ))}
                 </div>
@@ -280,111 +282,105 @@ export function App() {
           </div>
         </div>
 
-        {/* Right Side: Utilities, Bell, Region, Account */}
-        <div className="flex items-center gap-1 sm:gap-2">
-          {/* CloudShell Terminal Icon */}
+        {/* Right Side: CloudShell CLI, Bell, Env, Account */}
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* Gateway CloudShell CLI Button */}
           <button
             onClick={() => setShowCliModal(true)}
-            className="p-1.5 rounded text-slate-400 hover:text-white hover:bg-[#1e2738] transition-colors"
-            title="AWS CloudShell / Gateway CLI"
+            className="p-1.5 rounded text-slate-400 hover:text-white hover:bg-[#162030] transition-colors"
+            title="Gateway CLI & Smoke Test Shell"
           >
             <Terminal size={14} />
           </button>
 
-          {/* Notifications Bell with badge 8 */}
+          {/* Notifications Bell */}
           <div className="relative">
             <button
               onClick={() => setShowNotifications(!showNotifications)}
-              className="p-1.5 rounded text-slate-400 hover:text-white hover:bg-[#1e2738] transition-colors relative"
-              title="AWS User Notifications"
+              className="p-1.5 rounded text-slate-400 hover:text-white hover:bg-[#162030] transition-colors relative"
+              title="Gateway Alerts & 3am Test Forensics"
             >
               <Bell size={14} />
-              <span className="absolute -top-0.5 -right-0.5 bg-[#ec7211] text-white text-[9px] font-bold px-1 rounded-full leading-tight">
-                {failedTasks.length > 0 ? failedTasks.length : '8'}
-              </span>
+              {failedTasks.length > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 bg-rose-500 text-white text-[9px] font-bold px-1 rounded-full leading-tight">
+                  {failedTasks.length}
+                </span>
+              )}
             </button>
 
             {/* Notification Drawer */}
             {showNotifications && (
-              <div className="absolute right-0 mt-2 w-80 bg-[#161f2e] border border-[#2b3a50] rounded-lg shadow-2xl py-3 px-3 z-50 space-y-2">
+              <div className="absolute right-0 mt-2 w-80 bg-[#111724] border border-[#1e293b] rounded-lg shadow-2xl py-3 px-3 z-50 space-y-2">
                 <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-                  <span className="font-bold text-xs text-white">AWS Notifications</span>
+                  <span className="font-bold text-xs text-white">Gateway Notifications</span>
                   <button onClick={() => setShowNotifications(false)} className="text-slate-400 hover:text-white">
                     <X size={12} />
                   </button>
                 </div>
                 <div className="space-y-2 max-h-60 overflow-y-auto">
-                  <div className="p-2 rounded bg-slate-900 border border-slate-800 text-xs space-y-1">
-                    <div className="flex items-center gap-1.5 text-amber-400 font-medium">
-                      <AlertTriangle size={13} />
-                      <span>The 3am Test Alert</span>
+                  {failedTasks.length > 0 ? (
+                    failedTasks.map((t) => (
+                      <div key={t.id} className="p-2 rounded bg-slate-900 border border-rose-900/30 text-xs space-y-1">
+                        <div className="flex items-center gap-1.5 text-rose-400 font-medium">
+                          <AlertTriangle size={13} />
+                          <span>3am Test: Transport Failure</span>
+                        </div>
+                        <p className="text-[11px] text-slate-300 font-mono truncate">{t.id}</p>
+                        <button
+                          onClick={() => {
+                            setSelectedTaskId(t.id);
+                            setShowNotifications(false);
+                          }}
+                          className="text-[11px] text-blue-400 hover:underline pt-1 block"
+                        >
+                          View Forensic Timeline ↗
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-3 text-center text-slate-500 text-xs">
+                      All upstream agent streams operating normally.
                     </div>
-                    <p className="text-[11px] text-slate-300">
-                      Simulated upstream flaky connection drop detected on route /gw/flaky/.
-                    </p>
-                    <button
-                      onClick={() => {
-                        setActiveTab('tasks');
-                        setShowNotifications(false);
-                      }}
-                      className="text-[11px] text-blue-400 hover:underline pt-1 block"
-                    >
-                      View in Tasks Triage ↗
-                    </button>
-                  </div>
-
-                  <div className="p-2 rounded bg-slate-900/40 border border-slate-800/80 text-xs space-y-0.5">
-                    <div className="text-slate-300 font-medium">A2A Gateway Live</div>
-                    <p className="text-[11px] text-slate-400">WebSocket pub/sub stream connected to Redis.</p>
-                  </div>
+                  )}
                 </div>
               </div>
             )}
           </div>
 
-          {/* Help Question Mark */}
-          <button
-            onClick={() => window.open('https://github.com', '_blank')}
-            className="p-1.5 rounded text-slate-400 hover:text-white hover:bg-[#1e2738] transition-colors"
-            title="Help"
-          >
-            <HelpCircle size={14} />
-          </button>
-
           {/* Settings Gear */}
           <button
             onClick={() => setShowKeyModal(true)}
-            className="p-1.5 rounded text-slate-400 hover:text-white hover:bg-[#1e2738] transition-colors"
+            className="p-1.5 rounded text-slate-400 hover:text-white hover:bg-[#162030] transition-colors"
             title="Gateway Settings & API Key"
           >
             <Settings size={14} />
           </button>
 
-          {/* Region Dropdown */}
+          {/* Environment Selector */}
           <div className="relative">
             <button
-              onClick={() => setShowRegionMenu(!showRegionMenu)}
-              className="flex items-center gap-1 px-2 py-1 rounded hover:bg-[#1e2738] text-slate-300 hover:text-white transition-colors"
+              onClick={() => setShowEnvMenu(!showEnvMenu)}
+              className="flex items-center gap-1 px-2 py-1 rounded hover:bg-[#162030] text-slate-300 hover:text-white transition-colors"
             >
-              <span className="text-[11px] hidden sm:inline">{selectedRegion}</span>
+              <span className="text-[11px] hidden sm:inline">{selectedEnv}</span>
               <ChevronDown size={11} className="text-slate-400" />
             </button>
 
-            {showRegionMenu && (
-              <div className="absolute right-0 mt-2 w-52 bg-[#161f2e] border border-[#2b3a50] rounded-lg shadow-2xl py-1 z-50 text-xs">
-                {['Asia Pacific (Mumbai)', 'US East (N. Virginia)', 'US West (Oregon)', 'Local Docker (macOS)'].map(
-                  (reg) => (
+            {showEnvMenu && (
+              <div className="absolute right-0 mt-2 w-60 bg-[#111724] border border-[#1e293b] rounded-lg shadow-2xl py-1 z-50 text-xs">
+                {['Local Docker Fleet (Port 8000)', 'Staging Gateway', 'Production Swarm'].map(
+                  (env) => (
                     <button
-                      key={reg}
+                      key={env}
                       onClick={() => {
-                        setSelectedRegion(reg);
-                        setShowRegionMenu(false);
+                        setSelectedEnv(env);
+                        setShowEnvMenu(false);
                       }}
                       className={`w-full px-3 py-1.5 text-left hover:bg-slate-800 transition-colors ${
-                        selectedRegion === reg ? 'text-blue-400 font-semibold' : 'text-slate-300'
+                        selectedEnv === env ? 'text-blue-400 font-semibold' : 'text-slate-300'
                       }`}
                     >
-                      {reg}
+                      {env}
                     </button>
                   )
                 )}
@@ -392,27 +388,25 @@ export function App() {
             )}
           </div>
 
-          {/* Account ID / Profile Pill */}
+          {/* Identity & WebSocket Status Pill */}
           <div className="relative">
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center gap-1.5 px-2 py-1 rounded hover:bg-[#1e2738] text-slate-300 hover:text-white transition-colors"
+              className="flex items-center gap-1.5 px-2 py-1 rounded hover:bg-[#162030] text-slate-300 hover:text-white transition-colors"
             >
-              <div className="w-4 h-4 rounded-full bg-blue-600 flex items-center justify-center text-[9px] font-bold text-white">
-                L
-              </div>
-              <span className="text-[11px] font-medium hidden md:inline">Liquidlab_Dev (612662553568)</span>
+              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" title="Live Redis WS Connected" />
+              <span className="text-[11px] font-medium hidden md:inline">Admin (Bootstrap)</span>
               <ChevronDown size={11} className="text-slate-400" />
             </button>
 
             {showUserMenu && (
-              <div className="absolute right-0 mt-2 w-64 bg-[#161f2e] border border-[#2b3a50] rounded-lg shadow-2xl py-2 px-3 z-50 text-xs space-y-2">
+              <div className="absolute right-0 mt-2 w-64 bg-[#111724] border border-[#1e293b] rounded-lg shadow-2xl py-2 px-3 z-50 text-xs space-y-2">
                 <div className="pb-2 border-b border-slate-800">
-                  <div className="font-bold text-white">Liquidlab_Dev</div>
-                  <div className="text-[11px] text-slate-400 font-mono">Account ID: 612662553568</div>
-                  <div className="text-[10px] text-emerald-400 mt-1 flex items-center gap-1">
+                  <div className="font-bold text-white">Gateway Administrator</div>
+                  <div className="text-[11px] text-slate-400 font-mono">Role: Global Key Admin</div>
+                  <div className="text-[10px] text-emerald-400 mt-1 flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                    <span>WS Feed: {wsStatus}</span>
+                    <span>WebSocket Stream: {wsStatus}</span>
                   </div>
                 </div>
                 <button
@@ -422,7 +416,7 @@ export function App() {
                   }}
                   className="w-full text-left py-1 text-slate-300 hover:text-white"
                 >
-                  Configure Gateway Key
+                  Configure Gateway Auth Key
                 </button>
               </div>
             )}
@@ -430,8 +424,8 @@ export function App() {
         </div>
       </header>
 
-      {/* 2. Sub-Header Bar (Amplify Badge + Breadcrumb / Drawer Toggle) */}
-      <div className="h-9 bg-[#101622] border-b border-[#1f293d] px-3 flex items-center justify-between text-xs select-none">
+      {/* 2. Subnav Bar & Drawer Toggle */}
+      <div className="h-9 bg-[#0e131d] border-b border-[#1a2332] px-3 flex items-center justify-between text-xs select-none">
         <div className="flex items-center gap-3">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -441,19 +435,16 @@ export function App() {
             <Menu size={14} />
           </button>
 
-          {/* Service Badge & Breadcrumbs */}
+          {/* Breadcrumb Path */}
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-rose-600 flex items-center justify-center text-white text-[9px] font-bold">
-              <Zap size={10} />
-            </div>
             <button
               onClick={() => {
                 setSelectedTaskId(null);
                 setActiveTab('home');
               }}
-              className="font-bold text-white hover:text-slate-200 transition-colors"
+              className="font-bold text-white hover:text-slate-200 transition-colors flex items-center gap-1.5"
             >
-              AWS Amplify
+              <span>A2A Gateway</span>
             </button>
             <span className="text-slate-600">/</span>
             <span className="text-slate-300 capitalize">
@@ -462,7 +453,7 @@ export function App() {
           </div>
         </div>
 
-        {/* Quick Nav Tabs */}
+        {/* View Switcher Tabs */}
         <div className="flex items-center gap-1">
           <button
             onClick={() => {
@@ -470,7 +461,7 @@ export function App() {
               setActiveTab('home');
             }}
             className={`px-2.5 py-1 rounded text-[11px] font-medium transition-colors ${
-              activeTab === 'home' && !selectedTaskId ? 'bg-[#1e2738] text-white' : 'text-slate-400 hover:text-white'
+              activeTab === 'home' && !selectedTaskId ? 'bg-[#1e293b] text-white' : 'text-slate-400 hover:text-white'
             }`}
           >
             Console Home
@@ -481,7 +472,7 @@ export function App() {
               setActiveTab('tasks');
             }}
             className={`px-2.5 py-1 rounded text-[11px] font-medium transition-colors ${
-              activeTab === 'tasks' && !selectedTaskId ? 'bg-[#1e2738] text-white' : 'text-slate-400 hover:text-white'
+              activeTab === 'tasks' && !selectedTaskId ? 'bg-[#1e293b] text-white' : 'text-slate-400 hover:text-white'
             }`}
           >
             Tasks ({tasks.length})
@@ -492,7 +483,7 @@ export function App() {
               setActiveTab('agents');
             }}
             className={`px-2.5 py-1 rounded text-[11px] font-medium transition-colors ${
-              activeTab === 'agents' ? 'bg-[#1e2738] text-white' : 'text-slate-400 hover:text-white'
+              activeTab === 'agents' ? 'bg-[#1e293b] text-white' : 'text-slate-400 hover:text-white'
             }`}
           >
             Agents
@@ -503,7 +494,7 @@ export function App() {
               setActiveTab('gateway');
             }}
             className={`px-2.5 py-1 rounded text-[11px] font-medium transition-colors ${
-              activeTab === 'gateway' ? 'bg-[#1e2738] text-white' : 'text-slate-400 hover:text-white'
+              activeTab === 'gateway' ? 'bg-[#1e293b] text-white' : 'text-slate-400 hover:text-white'
             }`}
           >
             Gateway
@@ -514,10 +505,10 @@ export function App() {
       {/* 3. Collapsible Navigation Drawer */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 flex">
-          <div className="w-64 bg-[#141b27] border-r border-[#222e42] p-4 flex flex-col justify-between shadow-2xl">
+          <div className="w-64 bg-[#111724] border-r border-[#1e293b] p-4 flex flex-col justify-between shadow-2xl">
             <div className="space-y-4">
               <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                <span className="font-bold text-sm text-white">AWS & A2A Services</span>
+                <span className="font-bold text-sm text-white">Gateway Navigation</span>
                 <button onClick={() => setSidebarOpen(false)} className="text-slate-400 hover:text-white">
                   <X size={15} />
                 </button>
@@ -531,7 +522,7 @@ export function App() {
                     setSidebarOpen(false);
                   }}
                   className={`w-full px-3 py-2 rounded text-left font-medium transition-colors flex items-center gap-2 ${
-                    activeTab === 'home' && !selectedTaskId ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800'
+                    activeTab === 'home' && !selectedTaskId ? 'bg-indigo-600 text-white' : 'text-slate-300 hover:bg-slate-800'
                   }`}
                 >
                   <LayoutGrid size={14} />
@@ -545,11 +536,11 @@ export function App() {
                     setSidebarOpen(false);
                   }}
                   className={`w-full px-3 py-2 rounded text-left font-medium transition-colors flex items-center gap-2 ${
-                    activeTab === 'tasks' && !selectedTaskId ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800'
+                    activeTab === 'tasks' && !selectedTaskId ? 'bg-indigo-600 text-white' : 'text-slate-300 hover:bg-slate-800'
                   }`}
                 >
                   <Activity size={14} />
-                  <span>Tasks (CloudWatch Triage)</span>
+                  <span>Tasks Triage Stream</span>
                 </button>
 
                 <button
@@ -559,11 +550,11 @@ export function App() {
                     setSidebarOpen(false);
                   }}
                   className={`w-full px-3 py-2 rounded text-left font-medium transition-colors flex items-center gap-2 ${
-                    activeTab === 'agents' ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800'
+                    activeTab === 'agents' ? 'bg-indigo-600 text-white' : 'text-slate-300 hover:bg-slate-800'
                   }`}
                 >
                   <Boxes size={14} />
-                  <span>Registered Agents (ECR)</span>
+                  <span>Registered Agents</span>
                 </button>
 
                 <button
@@ -573,17 +564,17 @@ export function App() {
                     setSidebarOpen(false);
                   }}
                   className={`w-full px-3 py-2 rounded text-left font-medium transition-colors flex items-center gap-2 ${
-                    activeTab === 'gateway' ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800'
+                    activeTab === 'gateway' ? 'bg-indigo-600 text-white' : 'text-slate-300 hover:bg-slate-800'
                   }`}
                 >
-                  <Zap size={14} />
-                  <span>Amplify Routes & IAM Keys</span>
+                  <Network size={14} />
+                  <span>Routes & API Keys</span>
                 </button>
               </div>
             </div>
 
             <div className="pt-4 border-t border-slate-800 text-[11px] text-slate-500">
-              A2A Gateway v0.1 • AWS Inspired Edition
+              A2A Gateway Console • Cloud-Native Observability
             </div>
           </div>
           <div className="flex-1 bg-black/60" onClick={() => setSidebarOpen(false)} />
@@ -620,26 +611,26 @@ export function App() {
       {/* 5. CloudShell CLI Simulation Modal */}
       {showCliModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4">
-          <div className="bg-[#121824] border border-[#2b3a50] rounded-lg max-w-2xl w-full p-4 space-y-3 shadow-2xl font-mono text-xs">
+          <div className="bg-[#101622] border border-[#1e293b] rounded-lg max-w-2xl w-full p-4 space-y-3 shadow-2xl font-mono text-xs">
             <div className="flex items-center justify-between pb-2 border-b border-slate-800">
               <div className="flex items-center gap-2 text-white font-bold">
-                <Terminal size={14} className="text-blue-400" />
-                <span>AWS CloudShell — A2A Gateway CLI</span>
+                <Terminal size={14} className="text-indigo-400" />
+                <span>Gateway Shell — Test Endpoints & Triggers</span>
               </div>
               <button onClick={() => setShowCliModal(false)} className="text-slate-400 hover:text-white">
                 <X size={14} />
               </button>
             </div>
             <div className="bg-[#0b0f17] p-3 rounded border border-slate-800/80 text-slate-300 space-y-2 leading-relaxed">
-              <p className="text-slate-400"># 1. Health check</p>
+              <p className="text-slate-400"># 1. Gateway Health Check</p>
               <p className="text-emerald-400 font-bold">$ curl http://localhost:8000/healthz</p>
-              <p className="text-slate-400"># 2. Trigger the 3am Test (flaky:die mid-stream drop)</p>
-              <p className="text-amber-400 font-bold">
+              <p className="text-slate-400"># 2. Trigger 3am Test (simulated mid-stream drop on /gw/flaky/)</p>
+              <p className="text-rose-400 font-bold">
                 $ curl -X POST http://localhost:8000/gw/flaky/ \<br />
                 &nbsp;&nbsp;-H "Authorization: Bearer dev-only-do-not-use-in-prod" \<br />
                 &nbsp;&nbsp;-d '&#123;"jsonrpc":"2.0","method":"message/stream","params":&#123;"message":&#123;"parts":[&#123;"kind":"text","text":"directive flaky:die"&#125;]&#125;&#125;&#125;'
               </p>
-              <p className="text-slate-400"># 3. Stream research report</p>
+              <p className="text-slate-400"># 3. Stream Multi-step Research Task</p>
               <p className="text-blue-400 font-bold">
                 $ curl -N -X POST http://localhost:8000/gw/research/ \<br />
                 &nbsp;&nbsp;-H "Authorization: Bearer dev-only-do-not-use-in-prod" \<br />
@@ -649,7 +640,7 @@ export function App() {
             <div className="flex justify-end pt-1">
               <button
                 onClick={() => setShowCliModal(false)}
-                className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs font-medium"
+                className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-xs font-medium"
               >
                 Close Shell
               </button>
@@ -661,10 +652,10 @@ export function App() {
       {/* 6. Set API Key Modal */}
       {showKeyModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4">
-          <div className="bg-[#141b27] border border-[#2b3a50] rounded-lg max-w-sm w-full p-5 space-y-4 shadow-xl">
-            <h3 className="text-sm font-bold text-white">Gateway API Key (IAM)</h3>
+          <div className="bg-[#111724] border border-[#1e293b] rounded-lg max-w-sm w-full p-5 space-y-4 shadow-xl">
+            <h3 className="text-sm font-bold text-white">Gateway API Key</h3>
             <p className="text-xs text-slate-400">
-              Control plane endpoints require a valid gateway key. Paste your bootstrap admin key or issued key below:
+              Control plane endpoints require a valid gateway key. Enter your bootstrap admin key or issued bearer key:
             </p>
 
             <form onSubmit={handleSaveKey} className="space-y-3">
@@ -673,7 +664,7 @@ export function App() {
                 placeholder="dev-only-do-not-use-in-prod"
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
-                className="w-full px-3 py-2 bg-[#0d121b] border border-slate-700 rounded text-xs text-white focus:outline-none focus:border-blue-500 font-mono"
+                className="w-full px-3 py-2 bg-[#0b0f17] border border-slate-700 rounded text-xs text-white focus:outline-none focus:border-indigo-500 font-mono"
               />
               <div className="flex justify-end space-x-2 pt-2">
                 <button
@@ -685,7 +676,7 @@ export function App() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs font-medium"
+                  className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-xs font-medium"
                 >
                   Save & Reload
                 </button>
