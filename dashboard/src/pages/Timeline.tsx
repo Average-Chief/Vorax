@@ -153,18 +153,18 @@ export function TimelinePage({ taskId, onBack }: TimelinePageProps) {
 
         {/* 3am Test Hero Alert Banner */}
         {gatewayNoteMessage && (
-          <div className="p-3 rounded bg-orange-950/30 border border-orange-500/40 text-orange-300 flex items-start justify-between text-xs animate-in fade-in">
+          <div className="p-3 bg-red-950/40 border border-red-500/60 text-red-200 flex items-start justify-between text-xs animate-in fade-in">
             <div className="flex items-start space-x-2">
-              <AlertTriangle size={16} className="text-orange-400 shrink-0 mt-0.5" />
+              <AlertTriangle size={16} className="text-red-400 shrink-0 mt-0.5" />
               <div>
-                <span className="font-semibold text-orange-200">Task ended abnormally: </span>
-                <span>{gatewayNoteMessage}</span>
+                <span className="font-semibold text-red-100 uppercase tracking-wide mr-1.5 text-[10px] bg-red-900/60 border border-red-700/60 px-1 py-0.5">gateway.note</span>
+                <span className="font-semibold text-red-200">{gatewayNoteMessage}</span>
               </div>
             </div>
             {gatewayNoteEvent && (
               <button
                 onClick={() => scrollToEvent(gatewayNoteEvent.seq)}
-                className="text-xs text-orange-400 hover:text-orange-200 underline shrink-0 ml-3"
+                className="text-xs text-red-400 hover:text-red-200 underline shrink-0 ml-3 font-mono"
               >
                 Jump to event #{gatewayNoteEvent.seq}
               </button>

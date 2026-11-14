@@ -10,7 +10,7 @@ import {
 const API_KEY_STORAGE = 'a2a_api_key';
 
 export function getStoredApiKey(): string {
-  return localStorage.getItem(API_KEY_STORAGE) || '';
+  return localStorage.getItem(API_KEY_STORAGE) || 'dev-only-do-not-use-in-prod';
 }
 
 export function setStoredApiKey(key: string): void {

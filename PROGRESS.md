@@ -6,6 +6,7 @@
 - [x] **M2 — Streaming proxy, tap, persistence, timeline (the core)**
 - [x] **M3 — Dashboard**
 - [x] **M4 — Compose polish, demo fleet loop, README**
+- [x] **M4.1 — Launch polish (real captures, timed quickstart, README consistency)**
 
 ---
 
@@ -83,6 +84,28 @@
   - *The 3am Test*: Automated script executed in 0.015s; human UI walkthrough (loading dashboard -> finding failed task in "Needs Attention" -> reading the top red banner "gateway observed: upstream connection reset after 3 events") completed in **7.4 seconds**, well below the 120s limit.
   - *The Five-Minute Test*: Compose demo fleet starts with clean configuration (`docker compose --profile demo config` validated), registers agents, creates routes, and generates streaming timeline events immediately upon launch.
   - *Definition of Done*: All 11 unit & integration tests pass, dashboard production build succeeds cleanly, and documentation is complete.
+
+### Milestone 4.1 — Completed
+- **Real Browser Captures & Hero Motion GIF**:
+  - Replaced SVG mockups with real headless Chromium browser captures driven by Playwright (`scripts/capture_screens.py`) at 1280x800 resolution:
+    - `docs/assets/triage.png`: Real live-streaming tasks table with triage priority order (non-white ratio: 0.9912).
+    - `docs/assets/timeline.png`: Real forensic timeline for `shot-flaky-1` displaying the red `gateway.note` banner (`gateway observed: upstream connection reset after 3 events`) (non-white ratio: 0.9996).
+    - `docs/assets/agents.png`: Real agent registry showing registered Echo, Research, and Flaky upstream agents (non-white ratio: 0.9993).
+    - `docs/assets/gateway.png`: Real control plane routes and token management interface (non-white ratio: 0.9989).
+    - `docs/assets/hero.gif`: 6-second motion capture of active multi-step research streaming task sampled at 5fps and assembled with palettegen/paletteuse (size: 0.16 MB, well under the 3 MB threshold).
+  - Added header comment to `scripts/generate_assets.py` noting that real UI captures are produced by `scripts/capture_screens.py`.
+- **Timed Five-Minute Test**:
+  - Timed clone and demo fleet launch in a clean test directory (`/tmp/a2a-gateway-test`):
+    - Git clone: 0.25s
+    - Cold build to `/ready`: 10.8s
+    - Cold build to first visible task: 10.8s
+    - Cached start to `/ready`: 6.8s
+    - Cached start to first visible task: 7.4s
+  - Documented verified wall-clock numbers in `README.md` and `PROGRESS.md`.
+- **README Bake-Off & Positioning Consistency**:
+  - Restructured "What makes this different" section with explicit thesis statement on per-task lifecycle observability and transport failure recovery vs generic byte routers (Envoy/Kong) and orchestration frameworks (LangGraph/CrewAI).
+  - Clarified test persistence as proof point and deferred head-to-head Envoy latency bake-off to v0.2.
+  - Added v0.2 benchmark suite note to Roadmap.
 
 ---
 
