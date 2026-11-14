@@ -158,9 +158,9 @@ export function ConsoleHome({
                   <Rocket size={15} />
                 </div>
                 <div className="space-y-0.5">
-                  <div className="text-xs font-semibold text-white group-hover:text-blue-400 flex items-center gap-1 transition-colors">
-                    <span>Route Provisioning & Proxying</span>
-                    <ArrowUpRight size={11} className="opacity-70" />
+                  <div className="text-xs font-semibold text-white group-hover:text-orange-400 flex items-center gap-1 transition-colors">
+                    <span className="underline underline-offset-2 decoration-neutral-600 group-hover:decoration-orange-400">Route Provisioning & Proxying</span>
+                    <ArrowUpRight size={11} className="opacity-70 group-hover:text-orange-400" />
                   </div>
                   <p className="text-[11px] text-slate-400 leading-normal">
                     Map incoming paths (<code className="text-slate-300 font-mono text-[10px]">/gw/:route</code>) to upstream agent endpoints with zero-touch credential forwarding.
@@ -177,9 +177,9 @@ export function ConsoleHome({
                   <Shield size={15} />
                 </div>
                 <div className="space-y-0.5">
-                  <div className="text-xs font-semibold text-white group-hover:text-rose-400 flex items-center gap-1 transition-colors">
-                    <span>The 3am Test Diagnostic</span>
-                    <ArrowUpRight size={11} className="opacity-70" />
+                  <div className="text-xs font-semibold text-white group-hover:text-orange-400 flex items-center gap-1 transition-colors">
+                    <span className="underline underline-offset-2 decoration-neutral-600 group-hover:decoration-orange-400">The 3am Test Diagnostic</span>
+                    <ArrowUpRight size={11} className="opacity-70 group-hover:text-orange-400" />
                   </div>
                   <p className="text-[11px] text-slate-400 leading-normal">
                     Locate upstream mid-stream drops, failure causes, and forensic notes in &lt; 2 minutes without touching server logs.
@@ -196,9 +196,9 @@ export function ConsoleHome({
                   <Cpu size={15} />
                 </div>
                 <div className="space-y-0.5">
-                  <div className="text-xs font-semibold text-white group-hover:text-emerald-400 flex items-center gap-1 transition-colors">
-                    <span>Agent Card Cache & Discovery</span>
-                    <ArrowUpRight size={11} className="opacity-70" />
+                  <div className="text-xs font-semibold text-white group-hover:text-orange-400 flex items-center gap-1 transition-colors">
+                    <span className="underline underline-offset-2 decoration-neutral-600 group-hover:decoration-orange-400">Agent Card Cache & Discovery</span>
+                    <ArrowUpRight size={11} className="opacity-70 group-hover:text-orange-400" />
                   </div>
                   <p className="text-[11px] text-slate-400 leading-normal">
                     Automatic 5s in-memory caching for <code className="text-slate-300 font-mono text-[10px]">.well-known/agent-card.json</code> with upstream refresh.
@@ -209,7 +209,7 @@ export function ConsoleHome({
           </div>
         </div>
 
-        {/* Widget 2: Fleet Agents & Subsystems (col-span-5) - Clean borderless rows */}
+        {/* Widget 2: Fleet Agents & Subsystems (col-span-5) - Permanent Underline + Orange on Hover */}
         <div className="lg:col-span-5 bg-[#080808] border border-neutral-800 p-4 flex flex-col justify-between hover:border-neutral-700 transition-colors">
           <div>
             <div className="flex items-center justify-between pb-3 border-b border-neutral-800 mb-3">
@@ -233,58 +233,68 @@ export function ConsoleHome({
               </div>
             </div>
 
-            {/* 2-column Grid of Gateway Agents & Subsystems - BORDERLESS */}
+            {/* 2-column Grid of Gateway Agents & Subsystems - Permanent Underline + Orange Hover */}
             <div className="grid grid-cols-2 gap-x-5 gap-y-2 text-xs">
               {/* Column 1 */}
               <div className="space-y-1.5">
                 <button
                   onClick={() => onNavigate('agents')}
-                  className="flex items-center gap-2.5 text-slate-300 hover:text-white w-full text-left group py-1 transition-colors"
+                  className="flex items-center gap-2.5 text-slate-300 w-full text-left group py-1 transition-colors"
                 >
-                  <div className="w-5 h-5 bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold text-[9px] shrink-0">
+                  <div className="w-5 h-5 bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold text-[9px] shrink-0 group-hover:bg-orange-500/20 group-hover:text-orange-400 transition-colors">
                     EC
                   </div>
-                  <span className="group-hover:underline text-xs truncate">Echo Agent (:8101)</span>
+                  <span className="underline underline-offset-2 decoration-neutral-500 group-hover:text-orange-400 group-hover:decoration-orange-400 text-xs truncate transition-colors">
+                    Echo Agent (:8101)
+                  </span>
                 </button>
 
                 <button
                   onClick={() => onNavigate('agents')}
-                  className="flex items-center gap-2.5 text-slate-300 hover:text-white w-full text-left group py-1 transition-colors"
+                  className="flex items-center gap-2.5 text-slate-300 w-full text-left group py-1 transition-colors"
                 >
-                  <div className="w-5 h-5 bg-blue-500/10 text-blue-400 flex items-center justify-center text-[10px] shrink-0">
+                  <div className="w-5 h-5 bg-blue-500/10 text-blue-400 flex items-center justify-center text-[10px] shrink-0 group-hover:bg-orange-500/20 group-hover:text-orange-400 transition-colors">
                     <Layers size={12} />
                   </div>
-                  <span className="group-hover:underline text-xs truncate">Research (:8102)</span>
+                  <span className="underline underline-offset-2 decoration-neutral-500 group-hover:text-orange-400 group-hover:decoration-orange-400 text-xs truncate transition-colors">
+                    Research (:8102)
+                  </span>
                 </button>
 
                 <button
                   onClick={() => onNavigate('agents')}
-                  className="flex items-center gap-2.5 text-slate-300 hover:text-white w-full text-left group py-1 transition-colors"
+                  className="flex items-center gap-2.5 text-slate-300 w-full text-left group py-1 transition-colors"
                 >
-                  <div className="w-5 h-5 bg-rose-500/10 text-rose-400 flex items-center justify-center text-[10px] shrink-0">
+                  <div className="w-5 h-5 bg-rose-500/10 text-rose-400 flex items-center justify-center text-[10px] shrink-0 group-hover:bg-orange-500/20 group-hover:text-orange-400 transition-colors">
                     <Zap size={12} />
                   </div>
-                  <span className="group-hover:underline text-xs truncate">Flaky Agent (:8103)</span>
+                  <span className="underline underline-offset-2 decoration-neutral-500 group-hover:text-orange-400 group-hover:decoration-orange-400 text-xs truncate transition-colors">
+                    Flaky Agent (:8103)
+                  </span>
                 </button>
 
                 <button
                   onClick={() => onNavigate('tasks')}
-                  className="flex items-center gap-2.5 text-slate-300 hover:text-white w-full text-left group py-1 transition-colors"
+                  className="flex items-center gap-2.5 text-slate-300 w-full text-left group py-1 transition-colors"
                 >
-                  <div className="w-5 h-5 bg-cyan-500/10 text-cyan-400 flex items-center justify-center text-[10px] shrink-0">
+                  <div className="w-5 h-5 bg-cyan-500/10 text-cyan-400 flex items-center justify-center text-[10px] shrink-0 group-hover:bg-orange-500/20 group-hover:text-orange-400 transition-colors">
                     <Activity size={12} />
                   </div>
-                  <span className="group-hover:underline text-xs truncate">Triage Priority Engine</span>
+                  <span className="underline underline-offset-2 decoration-neutral-500 group-hover:text-orange-400 group-hover:decoration-orange-400 text-xs truncate transition-colors">
+                    Triage Priority Engine
+                  </span>
                 </button>
 
                 <button
                   onClick={() => onNavigate('tasks')}
-                  className="flex items-center gap-2.5 text-slate-300 hover:text-white w-full text-left group py-1 transition-colors"
+                  className="flex items-center gap-2.5 text-slate-300 w-full text-left group py-1 transition-colors"
                 >
-                  <div className="w-5 h-5 bg-purple-500/10 text-purple-400 flex items-center justify-center text-[10px] shrink-0">
+                  <div className="w-5 h-5 bg-purple-500/10 text-purple-400 flex items-center justify-center text-[10px] shrink-0 group-hover:bg-orange-500/20 group-hover:text-orange-400 transition-colors">
                     <Clock size={12} />
                   </div>
-                  <span className="group-hover:underline text-xs truncate">Task Timeline Tap</span>
+                  <span className="underline underline-offset-2 decoration-neutral-500 group-hover:text-orange-400 group-hover:decoration-orange-400 text-xs truncate transition-colors">
+                    Task Timeline Tap
+                  </span>
                 </button>
               </div>
 
@@ -292,52 +302,62 @@ export function ConsoleHome({
               <div className="space-y-1.5">
                 <button
                   onClick={() => onNavigate('gateway')}
-                  className="flex items-center gap-2.5 text-slate-300 hover:text-white w-full text-left group py-1 transition-colors"
+                  className="flex items-center gap-2.5 text-slate-300 w-full text-left group py-1 transition-colors"
                 >
-                  <div className="w-5 h-5 bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-[10px] shrink-0">
+                  <div className="w-5 h-5 bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-[10px] shrink-0 group-hover:bg-orange-500/20 group-hover:text-orange-400 transition-colors">
                     <Network size={12} />
                   </div>
-                  <span className="group-hover:underline text-xs truncate">Route Mapping</span>
+                  <span className="underline underline-offset-2 decoration-neutral-500 group-hover:text-orange-400 group-hover:decoration-orange-400 text-xs truncate transition-colors">
+                    Route Mapping
+                  </span>
                 </button>
 
                 <button
                   onClick={() => onNavigate('gateway')}
-                  className="flex items-center gap-2.5 text-slate-300 hover:text-white w-full text-left group py-1 transition-colors"
+                  className="flex items-center gap-2.5 text-slate-300 w-full text-left group py-1 transition-colors"
                 >
-                  <div className="w-5 h-5 bg-indigo-500/10 text-indigo-400 flex items-center justify-center text-[10px] shrink-0">
+                  <div className="w-5 h-5 bg-indigo-500/10 text-indigo-400 flex items-center justify-center text-[10px] shrink-0 group-hover:bg-orange-500/20 group-hover:text-orange-400 transition-colors">
                     <Key size={12} />
                   </div>
-                  <span className="group-hover:underline text-xs truncate">API Key Vault</span>
+                  <span className="underline underline-offset-2 decoration-neutral-500 group-hover:text-orange-400 group-hover:decoration-orange-400 text-xs truncate transition-colors">
+                    API Key Vault
+                  </span>
                 </button>
 
                 <button
                   onClick={() => onNavigate('tasks')}
-                  className="flex items-center gap-2.5 text-slate-300 hover:text-white w-full text-left group py-1 transition-colors"
+                  className="flex items-center gap-2.5 text-slate-300 w-full text-left group py-1 transition-colors"
                 >
-                  <div className="w-5 h-5 bg-red-500/10 text-red-400 flex items-center justify-center text-[10px] shrink-0">
+                  <div className="w-5 h-5 bg-red-500/10 text-red-400 flex items-center justify-center text-[10px] shrink-0 group-hover:bg-orange-500/20 group-hover:text-orange-400 transition-colors">
                     <Radio size={12} />
                   </div>
-                  <span className="group-hover:underline text-xs truncate">Redis Event Bus</span>
+                  <span className="underline underline-offset-2 decoration-neutral-500 group-hover:text-orange-400 group-hover:decoration-orange-400 text-xs truncate transition-colors">
+                    Redis Event Bus
+                  </span>
                 </button>
 
                 <button
                   onClick={onOpenCli}
-                  className="flex items-center gap-2.5 text-slate-300 hover:text-white w-full text-left group py-1 transition-colors"
+                  className="flex items-center gap-2.5 text-slate-300 w-full text-left group py-1 transition-colors"
                 >
-                  <div className="w-5 h-5 bg-neutral-800 text-neutral-300 flex items-center justify-center text-[10px] shrink-0">
+                  <div className="w-5 h-5 bg-neutral-800 text-neutral-300 flex items-center justify-center text-[10px] shrink-0 group-hover:bg-orange-500/20 group-hover:text-orange-400 transition-colors">
                     <Terminal size={12} />
                   </div>
-                  <span className="group-hover:underline text-xs truncate">Gateway Shell</span>
+                  <span className="underline underline-offset-2 decoration-neutral-500 group-hover:text-orange-400 group-hover:decoration-orange-400 text-xs truncate transition-colors">
+                    Gateway Shell
+                  </span>
                 </button>
 
                 <button
                   onClick={() => onNavigate('gateway')}
-                  className="flex items-center gap-2.5 text-slate-300 hover:text-white w-full text-left group py-1 transition-colors"
+                  className="flex items-center gap-2.5 text-slate-300 w-full text-left group py-1 transition-colors"
                 >
-                  <div className="w-5 h-5 bg-teal-500/10 text-teal-400 flex items-center justify-center text-[10px] shrink-0">
+                  <div className="w-5 h-5 bg-teal-500/10 text-teal-400 flex items-center justify-center text-[10px] shrink-0 group-hover:bg-orange-500/20 group-hover:text-orange-400 transition-colors">
                     <Boxes size={12} />
                   </div>
-                  <span className="group-hover:underline text-xs truncate">Synthetic Note Writer</span>
+                  <span className="underline underline-offset-2 decoration-neutral-500 group-hover:text-orange-400 group-hover:decoration-orange-400 text-xs truncate transition-colors">
+                    Synthetic Note Writer
+                  </span>
                 </button>
               </div>
             </div>
@@ -406,10 +426,10 @@ export function ConsoleHome({
           <div className="pt-3 border-t border-neutral-800 mt-3 text-right">
             <button
               onClick={() => onNavigate('tasks')}
-              className="text-xs text-blue-400 hover:text-blue-300 font-medium inline-flex items-center gap-1"
+              className="text-xs text-blue-400 hover:text-orange-400 font-medium inline-flex items-center gap-1 group transition-colors"
             >
-              <span>Go to Triage Queue</span>
-              <ArrowUpRight size={11} />
+              <span className="underline underline-offset-2 decoration-neutral-600 group-hover:decoration-orange-400">Go to Triage Queue</span>
+              <ArrowUpRight size={11} className="group-hover:text-orange-400" />
             </button>
           </div>
         </div>
@@ -526,10 +546,10 @@ export function ConsoleHome({
               </div>
               <button
                 onClick={() => onNavigate('tasks')}
-                className="text-xs text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1"
+                className="text-xs text-blue-400 hover:text-orange-400 font-medium flex items-center gap-1 group transition-colors"
               >
-                <span>View Full Table</span>
-                <ArrowUpRight size={11} />
+                <span className="underline underline-offset-2 decoration-neutral-600 group-hover:decoration-orange-400">View Full Table</span>
+                <ArrowUpRight size={11} className="group-hover:text-orange-400" />
               </button>
             </div>
 
@@ -600,7 +620,7 @@ export function ConsoleHome({
                     <div className="flex items-center gap-2.5 overflow-hidden">
                       <StateChip state={t.current_state} />
                       <div className="truncate">
-                        <div className="text-xs font-mono text-slate-200 group-hover:text-blue-400 transition-colors truncate max-w-[200px] sm:max-w-[320px]">
+                        <div className="text-xs font-mono text-slate-200 group-hover:text-orange-400 transition-colors truncate max-w-[200px] sm:max-w-[320px]">
                           {t.id}
                         </div>
                         {t.error_summary && (
@@ -614,7 +634,7 @@ export function ConsoleHome({
                       <span className="text-[10px] text-slate-400 font-mono hidden sm:inline">
                         {t.last_event_at ? new Date(t.last_event_at).toLocaleTimeString() : 'now'}
                       </span>
-                      <span className="text-[11px] text-blue-400 group-hover:underline flex items-center gap-0.5">
+                      <span className="text-[11px] text-blue-400 group-hover:text-orange-400 underline underline-offset-2 decoration-neutral-600 group-hover:decoration-orange-400 flex items-center gap-0.5 transition-colors">
                         <span>Timeline</span>
                         <ArrowUpRight size={10} />
                       </span>
