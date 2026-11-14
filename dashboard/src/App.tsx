@@ -150,10 +150,51 @@ export function App() {
     setTimeout(() => setCopiedSnippet(null), 2000);
   };
 
+  const [readNotificationIds, setReadNotificationIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('a2a_read_notifications');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  const markNotificationAsRead = (id: string) => {
+    setReadNotificationIds((prev) => {
+      if (prev.includes(id)) return prev;
+      const next = [...prev, id];
+      try {
+        localStorage.setItem('a2a_read_notifications', JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
+  };
+
+  const markAllNotificationsAsRead = () => {
+    const allIds = failedTasks.map((t) => t.id);
+    setReadNotificationIds((prev) => {
+      const combined = Array.from(new Set([...prev, ...allIds]));
+      try {
+        localStorage.setItem('a2a_read_notifications', JSON.stringify(combined));
+      } catch (e) {}
+      return combined;
+    });
+  };
+
   const failedTasks = tasks.filter((t) => {
     const s = (t.current_state || '').toLowerCase();
     return ['failed', 'rejected', 'input-required'].includes(s);
   });
+
+  const unreadFailedTasks = failedTasks.filter((t) => !readNotificationIds.includes(t.id));
+
+  const toggleNotifications = () => {
+    const nextState = !showNotifications;
+    setShowNotifications(nextState);
+    if (nextState) {
+      markAllNotificationsAsRead();
+    }
+  };
 
   // Search filtering across real tasks, agents, and routes
   const q = searchQuery.trim().toLowerCase();
@@ -481,14 +522,14 @@ export function App() {
           {/* Notifications Bell */}
           <div className="relative">
             <button
-              onClick={() => setShowNotifications(!showNotifications)}
+              onClick={toggleNotifications}
               className="p-1.5 text-slate-400 hover:text-white hover:bg-neutral-900 border border-transparent hover:border-neutral-800 transition-colors relative"
               title="Gateway Alerts"
             >
               <Bell size={13} />
-              {failedTasks.length > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 bg-rose-600 text-white text-[9px] font-bold px-1 leading-tight">
-                  {failedTasks.length}
+              {unreadFailedTasks.length > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 bg-rose-600 text-white text-[9px] font-bold px-1 leading-tight rounded-sm">
+                  {unreadFailedTasks.length}
                 </span>
               )}
             </button>
@@ -497,31 +538,71 @@ export function App() {
             {showNotifications && (
               <div className="absolute right-0 mt-2 w-80 bg-black border border-neutral-800 shadow-2xl py-3 px-3 z-50 space-y-2">
                 <div className="flex items-center justify-between pb-2 border-b border-neutral-800">
-                  <span className="font-bold text-xs text-white">Gateway Notifications</span>
-                  <button onClick={() => setShowNotifications(false)} className="text-slate-500 hover:text-white">
-                    <X size={12} />
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-xs text-white">Gateway Notifications</span>
+                    {unreadFailedTasks.length > 0 ? (
+                      <span className="text-[10px] bg-rose-950 text-rose-300 border border-rose-800 px-1 font-mono">
+                        {unreadFailedTasks.length} new
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-slate-500 font-mono">
+                        All read
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {failedTasks.length > 0 && (
+                      <button
+                        onClick={markAllNotificationsAsRead}
+                        className="text-[10px] text-slate-400 hover:text-white underline cursor-pointer"
+                        title="Mark all alerts as read"
+                      >
+                        Clear badge
+                      </button>
+                    )}
+                    <button onClick={() => setShowNotifications(false)} className="text-slate-500 hover:text-white">
+                      <X size={12} />
+                    </button>
+                  </div>
                 </div>
                 <div className="space-y-1.5 max-h-60 overflow-y-auto">
                   {failedTasks.length > 0 ? (
-                    failedTasks.map((t) => (
-                      <div key={t.id} className="p-2 bg-neutral-950 border border-rose-900/60 text-xs space-y-1">
-                        <div className="flex items-center gap-1.5 text-rose-400 font-medium">
-                          <AlertTriangle size={12} />
-                          <span>3am Test: Transport Failure</span>
-                        </div>
-                        <p className="text-[10px] text-slate-400 font-mono truncate">{t.id}</p>
-                        <button
-                          onClick={() => {
-                            setSelectedTaskId(t.id);
-                            setShowNotifications(false);
-                          }}
-                          className="text-[10px] text-indigo-400 hover:underline pt-0.5 block"
+                    failedTasks.map((t) => {
+                      const isUnread = !readNotificationIds.includes(t.id);
+                      return (
+                        <div
+                          key={t.id}
+                          className={`p-2 bg-neutral-950 border text-xs space-y-1 transition-colors ${
+                            isUnread ? 'border-rose-900/80 bg-rose-950/20' : 'border-neutral-800/60 opacity-80'
+                          }`}
                         >
-                          View Forensic Timeline ↗
-                        </button>
-                      </div>
-                    ))
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1.5 text-rose-400 font-medium">
+                              <AlertTriangle size={12} />
+                              <span>3am Test: Transport Failure</span>
+                            </div>
+                            <button
+                              onClick={() => markNotificationAsRead(t.id)}
+                              className="text-slate-500 hover:text-slate-300 p-0.5"
+                              title="Dismiss this notification"
+                            >
+                              <X size={10} />
+                            </button>
+                          </div>
+                          <p className="text-[10px] text-slate-400 font-mono truncate">{t.id}</p>
+                          <button
+                            onClick={() => {
+                              markNotificationAsRead(t.id);
+                              setSelectedTaskId(t.id);
+                              setShowNotifications(false);
+                            }}
+                            className="text-[10px] text-indigo-400 hover:underline pt-0.5 block"
+                          >
+                            View Forensic Timeline ↗
+                          </button>
+                        </div>
+                      );
+                    })
                   ) : (
                     <div className="p-3 text-center text-slate-500 text-xs">
                       All upstream agent streams operating normally.
