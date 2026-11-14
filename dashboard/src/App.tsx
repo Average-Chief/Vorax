@@ -22,6 +22,8 @@ import {
   ArrowRight,
   RefreshCw,
   Cpu,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { useWs } from './hooks/useWs';
 import { useLiveTasks } from './hooks/useLiveTasks';
@@ -30,7 +32,9 @@ import { TasksPage } from './pages/Tasks';
 import { TimelinePage } from './pages/Timeline';
 import { AgentsPage } from './pages/Agents';
 import { GatewayPage } from './pages/Gateway';
-import { getStoredApiKey, setStoredApiKey } from './lib/api';
+import { AgentListItem, GatewayRoute } from './lib/types';
+import { getStoredApiKey, setStoredApiKey, fetchAgents, fetchRoutes } from './lib/api';
+import { StateChip } from './components/StateChip';
 
 type Tab = 'home' | 'tasks' | 'agents' | 'gateway';
 
@@ -64,6 +68,7 @@ export function App() {
       window.history.replaceState(null, '', `/${activeTab}`);
     }
   }, [activeTab, selectedTaskId]);
+
   const [apiKey, setApiKey] = useState(getStoredApiKey());
   const [showKeyModal, setShowKeyModal] = useState(false);
   const [showCliModal, setShowCliModal] = useState(false);
@@ -74,11 +79,26 @@ export function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
-  const [selectedEnv, setSelectedEnv] = useState('Local Docker Fleet (Port 8000)');
+
+  // Real connected data for global search & status
+  const [agents, setAgents] = useState<AgentListItem[]>([]);
+  const [routes, setRoutes] = useState<GatewayRoute[]>([]);
+  const [copiedSnippet, setCopiedSnippet] = useState<string | null>(null);
+  const [pingResult, setPingResult] = useState<string | null>(null);
+  const [pinging, setPinging] = useState(false);
 
   const { status: wsStatus } = useWs();
   const { tasks, loading } = useLiveTasks();
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    Promise.all([fetchAgents(), fetchRoutes()])
+      .then(([a, r]) => {
+        setAgents(a);
+        setRoutes(r);
+      })
+      .catch(() => {});
+  }, []);
 
   // Shortcut for Option+S or Cmd+K
   useEffect(() => {
@@ -106,10 +126,52 @@ export function App() {
     window.location.reload();
   };
 
+  const handlePing = async () => {
+    try {
+      setPinging(true);
+      const res = await fetch('/ready');
+      const data = await res.json();
+      setPingResult(`HTTP ${res.status}: ${JSON.stringify(data)}`);
+    } catch (err: any) {
+      setPingResult(`Error: ${err.message}`);
+    } finally {
+      setPinging(false);
+    }
+  };
+
+  const handleCopyCmd = (cmd: string, key: string) => {
+    navigator.clipboard.writeText(cmd);
+    setCopiedSnippet(key);
+    setTimeout(() => setCopiedSnippet(null), 2000);
+  };
+
   const failedTasks = tasks.filter((t) => {
     const s = (t.current_state || '').toLowerCase();
     return ['failed', 'rejected', 'input-required'].includes(s);
   });
+
+  // Search filtering across real tasks, agents, and routes
+  const q = searchQuery.trim().toLowerCase();
+  const filteredTasks = q
+    ? tasks.filter(
+        (t) =>
+          t.id.toLowerCase().includes(q) ||
+          (t.current_state || '').toLowerCase().includes(q) ||
+          (t.error_summary || '').toLowerCase().includes(q)
+      ).slice(0, 5)
+    : [];
+  const filteredAgents = q
+    ? agents.filter(
+        (a) =>
+          a.name.toLowerCase().includes(q) ||
+          a.endpoint_url.toLowerCase().includes(q)
+      ).slice(0, 3)
+    : [];
+  const filteredRoutes = q
+    ? routes.filter((r) => r.path_segment.toLowerCase().includes(q)).slice(0, 3)
+    : [];
+
+  const hasSearchResults = q.length > 0 && (filteredTasks.length > 0 || filteredAgents.length > 0 || filteredRoutes.length > 0);
 
   return (
     <div className="min-h-screen flex flex-col bg-black text-slate-100 font-sans selection:bg-neutral-800 selection:text-white">
@@ -201,7 +263,7 @@ export function App() {
                     </div>
                     <div>
                       <div className="font-semibold text-xs text-white">Upstream Agent Registry</div>
-                      <div className="text-[11px] text-slate-400">Echo, Research, and Flaky agent cards</div>
+                      <div className="text-[11px] text-slate-400">Registered agent cards and endpoints</div>
                     </div>
                   </button>
 
@@ -226,7 +288,7 @@ export function App() {
             )}
           </div>
 
-          {/* Sharp Search Bar with [Option+S] */}
+          {/* Sharp Search Bar with [Option+S] - Real Connected Search */}
           <div className="relative">
             <div
               onClick={() => {
@@ -250,66 +312,147 @@ export function App() {
               </span>
             </div>
 
-            {/* Quick Search Dropdown */}
+            {/* Quick Search Dropdown with Real Matching Results */}
             {searchOpen && (
-              <div className="absolute left-0 mt-1.5 w-full bg-black border border-neutral-800 shadow-2xl py-2 z-50">
-                <div className="px-3 py-1 text-[11px] text-slate-400 font-bold uppercase tracking-wider">
-                  Quick Navigation
-                </div>
-                <div className="py-1">
-                  <div
-                    onClick={() => {
-                      setActiveTab('tasks');
-                      setSelectedTaskId(null);
-                      setSearchOpen(false);
-                    }}
-                    className="px-3 py-1.5 hover:bg-neutral-900 text-xs text-slate-200 cursor-pointer flex items-center justify-between"
-                  >
-                    <span>Tasks Triage Stream</span>
-                    <span className="text-[10px] text-cyan-400">Triage Feed</span>
-                  </div>
-                  <div
-                    onClick={() => {
-                      setActiveTab('agents');
-                      setSelectedTaskId(null);
-                      setSearchOpen(false);
-                    }}
-                    className="px-3 py-1.5 hover:bg-neutral-900 text-xs text-slate-200 cursor-pointer flex items-center justify-between"
-                  >
-                    <span>Registered Upstream Agents</span>
-                    <span className="text-[10px] text-amber-400">Agent Cards</span>
-                  </div>
-                  <div
-                    onClick={() => {
-                      setActiveTab('gateway');
-                      setSelectedTaskId(null);
-                      setSearchOpen(false);
-                    }}
-                    className="px-3 py-1.5 hover:bg-neutral-900 text-xs text-slate-200 cursor-pointer flex items-center justify-between"
-                  >
-                    <span>Gateway Routes & Keys</span>
-                    <span className="text-[10px] text-emerald-400">Control Plane</span>
-                  </div>
-                  {tasks.slice(0, 3).map((t) => (
-                    <div
-                      key={t.id}
-                      onClick={() => {
-                        setSelectedTaskId(t.id);
-                        setSearchOpen(false);
-                      }}
-                      className="px-3 py-1.5 hover:bg-neutral-900 text-xs text-slate-200 cursor-pointer flex items-center justify-between"
-                    >
-                      <span className="font-mono text-[11px] truncate">{t.id}</span>
-                      <span className="text-[10px] text-indigo-400">Open Timeline</span>
+              <div className="absolute left-0 mt-1.5 w-full bg-black border border-neutral-800 shadow-2xl py-2 z-50 max-h-80 overflow-y-auto">
+                {q.length === 0 ? (
+                  <>
+                    <div className="px-3 py-1 text-[11px] text-slate-400 font-bold uppercase tracking-wider">
+                      Quick Navigation
                     </div>
-                  ))}
-                </div>
+                    <div className="py-1">
+                      <div
+                        onClick={() => {
+                          setActiveTab('tasks');
+                          setSelectedTaskId(null);
+                          setSearchOpen(false);
+                        }}
+                        className="px-3 py-1.5 hover:bg-neutral-900 text-xs text-slate-200 cursor-pointer flex items-center justify-between"
+                      >
+                        <span>Tasks Triage Stream</span>
+                        <span className="text-[10px] text-cyan-400">Triage Feed</span>
+                      </div>
+                      <div
+                        onClick={() => {
+                          setActiveTab('agents');
+                          setSelectedTaskId(null);
+                          setSearchOpen(false);
+                        }}
+                        className="px-3 py-1.5 hover:bg-neutral-900 text-xs text-slate-200 cursor-pointer flex items-center justify-between"
+                      >
+                        <span>Registered Upstream Agents</span>
+                        <span className="text-[10px] text-amber-400">Agent Cards</span>
+                      </div>
+                      <div
+                        onClick={() => {
+                          setActiveTab('gateway');
+                          setSelectedTaskId(null);
+                          setSearchOpen(false);
+                        }}
+                        className="px-3 py-1.5 hover:bg-neutral-900 text-xs text-slate-200 cursor-pointer flex items-center justify-between"
+                      >
+                        <span>Gateway Routes & Keys</span>
+                        <span className="text-[10px] text-emerald-400">Control Plane</span>
+                      </div>
+                      {tasks.slice(0, 3).map((t) => (
+                        <div
+                          key={t.id}
+                          onClick={() => {
+                            setSelectedTaskId(t.id);
+                            setSearchOpen(false);
+                          }}
+                          className="px-3 py-1.5 hover:bg-neutral-900 text-xs text-slate-200 cursor-pointer flex items-center justify-between"
+                        >
+                          <span className="font-mono text-[11px] truncate">{t.id}</span>
+                          <span className="text-[10px] text-indigo-400">Open Timeline</span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : hasSearchResults ? (
+                  <div className="space-y-2 py-1">
+                    {/* Matching Tasks */}
+                    {filteredTasks.length > 0 && (
+                      <div>
+                        <div className="px-3 py-1 text-[10px] text-slate-500 font-mono uppercase font-bold">
+                          Matching Tasks ({filteredTasks.length})
+                        </div>
+                        {filteredTasks.map((t) => (
+                          <div
+                            key={t.id}
+                            onClick={() => {
+                              setSelectedTaskId(t.id);
+                              setSearchOpen(false);
+                            }}
+                            className="px-3 py-1.5 hover:bg-neutral-900 text-xs cursor-pointer flex items-center justify-between"
+                          >
+                            <div className="flex items-center gap-2 overflow-hidden">
+                              <StateChip state={t.current_state} />
+                              <span className="font-mono text-[11px] text-slate-200 truncate">{t.id}</span>
+                            </div>
+                            <span className="text-[10px] text-indigo-400 shrink-0">Open Timeline ↗</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Matching Agents */}
+                    {filteredAgents.length > 0 && (
+                      <div className="border-t border-neutral-900 pt-1">
+                        <div className="px-3 py-1 text-[10px] text-slate-500 font-mono uppercase font-bold">
+                          Matching Agents ({filteredAgents.length})
+                        </div>
+                        {filteredAgents.map((a) => (
+                          <div
+                            key={a.id}
+                            onClick={() => {
+                              setActiveTab('agents');
+                              setSelectedTaskId(null);
+                              setSearchOpen(false);
+                            }}
+                            className="px-3 py-1.5 hover:bg-neutral-900 text-xs cursor-pointer flex items-center justify-between"
+                          >
+                            <span className="text-slate-200 font-medium">{a.name}</span>
+                            <span className="font-mono text-[10px] text-slate-500">{a.endpoint_url}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Matching Routes */}
+                    {filteredRoutes.length > 0 && (
+                      <div className="border-t border-neutral-900 pt-1">
+                        <div className="px-3 py-1 text-[10px] text-slate-500 font-mono uppercase font-bold">
+                          Matching Routes ({filteredRoutes.length})
+                        </div>
+                        {filteredRoutes.map((r) => (
+                          <div
+                            key={r.id}
+                            onClick={() => {
+                              setActiveTab('gateway');
+                              setSelectedTaskId(null);
+                              setSearchOpen(false);
+                            }}
+                            className="px-3 py-1.5 hover:bg-neutral-900 text-xs cursor-pointer flex items-center justify-between"
+                          >
+                            <span className="font-mono text-emerald-400">/gw/{r.path_segment}</span>
+                            <span className="text-[10px] text-slate-400">{r.agent_name || 'Route'}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="py-4 text-center text-xs text-slate-500 font-mono">
+                    No tasks, agents, or routes matching "{searchQuery}"
+                  </div>
+                )}
               </div>
             )}
           </div>
         </div>
 
-        {/* Right Side: Gateway CLI, Bell, Env, Account */}
+        {/* Right Side: Gateway CLI, Bell, Live Node Status, Account */}
         <div className="flex items-center gap-1.5 sm:gap-2">
           {/* Gateway CloudShell CLI Button */}
           <button
@@ -383,39 +526,62 @@ export function App() {
             <Settings size={13} />
           </button>
 
-          {/* Environment Selector */}
+          {/* Real Gateway Node Status Pill (Replaces Dummy Envs) */}
           <div className="relative">
             <button
               onClick={() => setShowEnvMenu(!showEnvMenu)}
-              className="flex items-center gap-1 px-2 py-1 hover:bg-neutral-900 border border-transparent hover:border-neutral-800 text-slate-300 hover:text-white transition-colors"
+              className="flex items-center gap-1.5 px-2 py-1 hover:bg-neutral-900 border border-transparent hover:border-neutral-800 text-slate-300 hover:text-white transition-colors"
+              title="Gateway Node Info"
             >
-              <span className="text-[11px] hidden sm:inline">{selectedEnv}</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+              <span className="text-[11px] font-mono hidden sm:inline">localhost:8000</span>
               <ChevronDown size={11} className="text-slate-500" />
             </button>
 
             {showEnvMenu && (
-              <div className="absolute right-0 mt-2 w-64 bg-black border border-neutral-800 shadow-2xl py-1 z-50 text-xs">
-                {['Local Docker Fleet (Port 8000)', 'Staging Gateway', 'Production Swarm'].map(
-                  (env) => (
-                    <button
-                      key={env}
-                      onClick={() => {
-                        setSelectedEnv(env);
-                        setShowEnvMenu(false);
-                      }}
-                      className={`w-full px-3 py-1.5 text-left hover:bg-neutral-900 transition-colors ${
-                        selectedEnv === env ? 'text-indigo-400 font-semibold' : 'text-slate-300'
-                      }`}
-                    >
-                      {env}
-                    </button>
-                  )
-                )}
+              <div className="absolute right-0 mt-2 w-72 bg-black border border-neutral-800 shadow-2xl p-3 z-50 text-xs space-y-2">
+                <div className="flex items-center justify-between pb-1.5 border-b border-neutral-800">
+                  <span className="font-bold text-white">Gateway Node Status</span>
+                  <span className="text-[10px] text-emerald-400 font-mono">ONLINE</span>
+                </div>
+                <div className="space-y-1 font-mono text-[11px] text-slate-300">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Endpoint:</span>
+                    <span>http://localhost:8000</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Data Plane:</span>
+                    <span className="text-indigo-400">/gw/:route/</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">WebSocket:</span>
+                    <span className="text-emerald-400">{wsStatus}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Active Tasks:</span>
+                    <span>{tasks.filter((t) => !t.is_terminal).length}</span>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-neutral-800 flex items-center justify-between">
+                  <button
+                    onClick={handlePing}
+                    disabled={pinging}
+                    className="px-2.5 py-1 bg-neutral-900 hover:bg-neutral-800 text-white rounded text-[11px] border border-neutral-700 transition-colors"
+                  >
+                    {pinging ? 'Pinging...' : 'Ping /ready'}
+                  </button>
+                  {pingResult && (
+                    <span className="text-[10px] font-mono text-emerald-400 truncate max-w-[130px]">
+                      {pingResult}
+                    </span>
+                  )}
+                </div>
               </div>
             )}
           </div>
 
-          {/* Identity & WebSocket Status Pill */}
+          {/* Identity & Admin Dropdown */}
           <div className="relative">
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
@@ -519,7 +685,7 @@ export function App() {
                 : 'text-slate-400 hover:text-white border-transparent'
             }`}
           >
-            Agents
+            Agents ({agents.length})
           </button>
           <button
             onClick={() => {
@@ -532,7 +698,7 @@ export function App() {
                 : 'text-slate-400 hover:text-white border-transparent'
             }`}
           >
-            Gateway
+            Gateway ({routes.length})
           </button>
         </div>
       </div>
@@ -589,7 +755,7 @@ export function App() {
                   }`}
                 >
                   <Boxes size={13} />
-                  <span>Registered Agents</span>
+                  <span>Registered Agents ({agents.length})</span>
                 </button>
 
                 <button
@@ -603,7 +769,7 @@ export function App() {
                   }`}
                 >
                   <Network size={13} />
-                  <span>Routes & API Keys</span>
+                  <span>Routes & API Keys ({routes.length})</span>
                 </button>
               </div>
             </div>
@@ -643,7 +809,7 @@ export function App() {
         )}
       </main>
 
-      {/* 5. CloudShell CLI Simulation Modal */}
+      {/* 5. Gateway Shell — Interactive Test Endpoints Modal */}
       {showCliModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4">
           <div className="bg-black border border-neutral-800 max-w-2xl w-full p-4 space-y-3 shadow-2xl font-mono text-xs">
@@ -656,21 +822,83 @@ export function App() {
                 <X size={13} />
               </button>
             </div>
-            <div className="bg-neutral-950 p-3 border border-neutral-800 text-slate-300 space-y-2 leading-relaxed">
-              <p className="text-slate-500"># 1. Gateway Health Check</p>
-              <p className="text-emerald-400 font-bold">$ curl http://localhost:8000/healthz</p>
-              <p className="text-slate-500"># 2. Trigger 3am Test (simulated mid-stream drop on /gw/flaky/)</p>
-              <p className="text-rose-400 font-bold">
-                $ curl -X POST http://localhost:8000/gw/flaky/ \<br />
-                &nbsp;&nbsp;-H "Authorization: Bearer dev-only-do-not-use-in-prod" \<br />
-                &nbsp;&nbsp;-d '&#123;"jsonrpc":"2.0","method":"message/stream","params":&#123;"message":&#123;"parts":[&#123;"kind":"text","text":"directive flaky:die"&#125;]&#125;&#125;&#125;'
-              </p>
-              <p className="text-slate-500"># 3. Stream Multi-step Research Task</p>
-              <p className="text-blue-400 font-bold">
-                $ curl -N -X POST http://localhost:8000/gw/research/ \<br />
-                &nbsp;&nbsp;-H "Authorization: Bearer dev-only-do-not-use-in-prod" \<br />
-                &nbsp;&nbsp;-d '&#123;"jsonrpc":"2.0","method":"message/stream","params":&#123;"message":&#123;"parts":[&#123;"kind":"text","text":"analyze telemetry"&#125;]&#125;&#125;&#125;'
-              </p>
+            <div className="bg-neutral-950 p-3 border border-neutral-800 text-slate-300 space-y-3 leading-relaxed">
+              {/* Snippet 1 */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-slate-500 text-[11px]">
+                  <span># 1. Gateway Health & Readiness Check</span>
+                  <button
+                    onClick={() => handleCopyCmd('curl http://localhost:8000/ready', 'ready')}
+                    className="text-slate-400 hover:text-white flex items-center gap-1 font-mono text-[10px]"
+                  >
+                    {copiedSnippet === 'ready' ? <Check size={11} className="text-emerald-400" /> : <Copy size={11} />}
+                    <span>{copiedSnippet === 'ready' ? 'Copied' : 'Copy'}</span>
+                  </button>
+                </div>
+                <div className="flex items-center justify-between bg-black p-2 border border-neutral-900 rounded">
+                  <span className="text-emerald-400 font-bold">$ curl http://localhost:8000/ready</span>
+                  <button
+                    onClick={handlePing}
+                    disabled={pinging}
+                    className="px-2 py-0.5 bg-neutral-900 hover:bg-neutral-800 text-[10px] text-slate-300 rounded border border-neutral-700"
+                  >
+                    {pinging ? 'Testing...' : 'Test in UI'}
+                  </button>
+                </div>
+                {pingResult && (
+                  <p className="text-[10px] text-emerald-400 font-mono bg-neutral-900/60 p-1 rounded">
+                    {pingResult}
+                  </p>
+                )}
+              </div>
+
+              {/* Snippet 2 */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-slate-500 text-[11px]">
+                  <span># 2. Trigger 3am Mid-Stream Failure Forensics (/gw/flaky/)</span>
+                  <button
+                    onClick={() =>
+                      handleCopyCmd(
+                        `curl -X POST http://localhost:8000/gw/flaky/ \\\n  -H "Authorization: Bearer ${apiKey}" \\\n  -H "Content-Type: application/json" \\\n  -d '{"jsonrpc":"2.0","method":"message/stream","params":{"message":{"parts":[{"kind":"text","text":"directive flaky:die"}]}}}'`,
+                        'flaky'
+                      )
+                    }
+                    className="text-slate-400 hover:text-white flex items-center gap-1 font-mono text-[10px]"
+                  >
+                    {copiedSnippet === 'flaky' ? <Check size={11} className="text-emerald-400" /> : <Copy size={11} />}
+                    <span>{copiedSnippet === 'flaky' ? 'Copied' : 'Copy'}</span>
+                  </button>
+                </div>
+                <pre className="text-rose-400 font-bold bg-black p-2 border border-neutral-900 rounded overflow-x-auto text-[11px]">
+{`$ curl -X POST http://localhost:8000/gw/flaky/ \\
+  -H "Authorization: Bearer ${apiKey}" \\
+  -d '{"jsonrpc":"2.0","method":"message/stream","params":{"message":{"parts":[{"kind":"text","text":"directive flaky:die"}]}}}'`}
+                </pre>
+              </div>
+
+              {/* Snippet 3 */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-slate-500 text-[11px]">
+                  <span># 3. Stream Multi-step Research Task (/gw/research/)</span>
+                  <button
+                    onClick={() =>
+                      handleCopyCmd(
+                        `curl -N -X POST http://localhost:8000/gw/research/ \\\n  -H "Authorization: Bearer ${apiKey}" \\\n  -H "Content-Type: application/json" \\\n  -d '{"jsonrpc":"2.0","method":"message/stream","params":{"message":{"parts":[{"kind":"text","text":"analyze telemetry"}]}}}'`,
+                        'research'
+                      )
+                    }
+                    className="text-slate-400 hover:text-white flex items-center gap-1 font-mono text-[10px]"
+                  >
+                    {copiedSnippet === 'research' ? <Check size={11} className="text-emerald-400" /> : <Copy size={11} />}
+                    <span>{copiedSnippet === 'research' ? 'Copied' : 'Copy'}</span>
+                  </button>
+                </div>
+                <pre className="text-blue-400 font-bold bg-black p-2 border border-neutral-900 rounded overflow-x-auto text-[11px]">
+{`$ curl -N -X POST http://localhost:8000/gw/research/ \\
+  -H "Authorization: Bearer ${apiKey}" \\
+  -d '{"jsonrpc":"2.0","method":"message/stream","params":{"message":{"parts":[{"kind":"text","text":"analyze telemetry"}]}}}'`}
+                </pre>
+              </div>
             </div>
             <div className="flex justify-end pt-1">
               <button

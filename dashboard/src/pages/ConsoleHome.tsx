@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Rocket,
   Shield,
@@ -12,8 +12,6 @@ import {
   Boxes,
   Zap,
   ArrowUpRight,
-  TrendingDown,
-  TrendingUp,
   MoreVertical,
   GripVertical,
   X,
@@ -23,8 +21,10 @@ import {
   CheckCircle2,
   Cpu,
   RefreshCw,
+  Plus,
 } from 'lucide-react';
-import { TaskSummary } from '../lib/types';
+import { AgentListItem, GatewayRoute, StatsResponse, TaskSummary } from '../lib/types';
+import { fetchAgents, fetchRoutes, fetchStats } from '../lib/api';
 import { StateChip } from '../components/StateChip';
 
 interface ConsoleHomeProps {
@@ -33,6 +33,16 @@ interface ConsoleHomeProps {
   onSelectTask: (taskId: string) => void;
   onNavigate: (tab: 'home' | 'tasks' | 'agents' | 'gateway') => void;
   onOpenCli: () => void;
+}
+
+function formatUptime(seconds?: number): string {
+  if (!seconds || seconds <= 0) return '0s';
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
 }
 
 export function ConsoleHome({
@@ -44,6 +54,32 @@ export function ConsoleHome({
 }: ConsoleHomeProps) {
   const [showBanner, setShowBanner] = useState(true);
   const [activeTasksTab, setActiveTasksTab] = useState<'needs_attention' | 'in_flight' | 'terminal' | 'all'>('needs_attention');
+
+  // Live real data for agents, routes, and stats
+  const [agents, setAgents] = useState<AgentListItem[]>([]);
+  const [routes, setRoutes] = useState<GatewayRoute[]>([]);
+  const [stats, setStats] = useState<StatsResponse | null>(null);
+
+  const loadExtraData = async () => {
+    try {
+      const [agentList, routeList, statsData] = await Promise.all([
+        fetchAgents(),
+        fetchRoutes(),
+        fetchStats(),
+      ]);
+      setAgents(agentList);
+      setRoutes(routeList);
+      setStats(statsData);
+    } catch {
+      // Graceful fallback
+    }
+  };
+
+  useEffect(() => {
+    loadExtraData();
+    const interval = setInterval(loadExtraData, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Live task segmentation
   const failedTasks = tasks.filter((t) => {
@@ -62,9 +98,15 @@ export function ConsoleHome({
       ? completedTasks
       : tasks;
 
+  // Real distribution calculations
+  const totalTasksCount = tasks.length;
+  const completedPct = totalTasksCount > 0 ? Math.round((completedTasks.length / totalTasksCount) * 100) : 0;
+  const inFlightPct = totalTasksCount > 0 ? Math.round((inFlightTasks.length / totalTasksCount) * 100) : 0;
+  const attentionPct = totalTasksCount > 0 ? Math.round((failedTasks.length / totalTasksCount) * 100) : 0;
+
   return (
     <div className="space-y-4 text-slate-200 font-sans">
-      {/* 1. Pure Black Gateway Announcement Banner */}
+      {/* 1. Gateway Announcement Banner */}
       {showBanner && (
         <div className="relative bg-[#080808] border border-neutral-800 p-4 shadow-sm">
           <button
@@ -121,13 +163,13 @@ export function ConsoleHome({
             className="px-3 py-1.5 text-xs font-medium bg-black hover:bg-neutral-900 text-slate-300 border border-neutral-800 hover:border-neutral-700 transition-colors flex items-center gap-1.5"
           >
             <RefreshCw size={12} className="text-slate-400" />
-            <span>Reset View</span>
+            <span>Refresh</span>
           </button>
           <button
             onClick={() => onNavigate('gateway')}
             className="px-3 py-1.5 text-xs font-bold bg-white hover:bg-slate-100 text-slate-900 transition-colors flex items-center gap-1.5"
           >
-            <span>+</span>
+            <Plus size={13} />
             <span>Register Route</span>
           </button>
         </div>
@@ -209,15 +251,15 @@ export function ConsoleHome({
           </div>
         </div>
 
-        {/* Widget 2: Fleet Agents & Subsystems (col-span-5) - Permanent Underline + Orange on Hover */}
+        {/* Widget 2: Fleet Agents & Subsystems (col-span-5) - Dynamic & Real */}
         <div className="lg:col-span-5 bg-[#080808] border border-neutral-800 p-4 flex flex-col justify-between hover:border-neutral-700 transition-colors">
           <div>
             <div className="flex items-center justify-between pb-3 border-b border-neutral-800 mb-3">
               <div className="flex items-center gap-2">
                 <GripVertical size={14} className="text-neutral-600 cursor-grab" />
                 <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
-                  <span>Agent Fleet & Subsystems</span>
-                  <span className="text-[11px] text-blue-400 font-normal">info</span>
+                  <span>Registered Agents ({agents.length})</span>
+                  <span className="text-[11px] text-blue-400 font-normal">fleet</span>
                 </h3>
               </div>
               <div className="flex items-center gap-2">
@@ -225,7 +267,7 @@ export function ConsoleHome({
                   onClick={() => onNavigate('agents')}
                   className="px-2.5 py-1 text-[11px] font-medium bg-black hover:bg-neutral-900 text-slate-300 border border-neutral-800 transition-colors"
                 >
-                  All Agents
+                  Manage Agents
                 </button>
                 <button className="text-neutral-400 hover:text-white p-0.5">
                   <MoreVertical size={14} />
@@ -233,133 +275,89 @@ export function ConsoleHome({
               </div>
             </div>
 
-            {/* 2-column Grid of Gateway Agents & Subsystems - Permanent Underline + Orange Hover */}
-            <div className="grid grid-cols-2 gap-x-5 gap-y-2 text-xs">
-              {/* Column 1 */}
-              <div className="space-y-1.5">
-                <button
-                  onClick={() => onNavigate('agents')}
-                  className="flex items-center gap-2.5 text-slate-300 w-full text-left group py-1 transition-colors"
-                >
-                  <div className="w-5 h-5 bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold text-[9px] shrink-0 group-hover:bg-orange-500/20 group-hover:text-orange-400 transition-colors">
-                    EC
-                  </div>
-                  <span className="underline underline-offset-2 decoration-neutral-500 group-hover:text-orange-400 group-hover:decoration-orange-400 text-xs truncate transition-colors">
-                    Echo Agent (:8101)
-                  </span>
-                </button>
+            {/* Dynamic Grid of Actual Registered Upstream Agents */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-xs">
+              {agents.length === 0 ? (
+                <div className="col-span-2 py-4 text-center text-xs text-slate-500">
+                  <span>No agents registered yet. </span>
+                  <button
+                    onClick={() => onNavigate('agents')}
+                    className="text-blue-400 hover:underline"
+                  >
+                    Register your first agent ↗
+                  </button>
+                </div>
+              ) : (
+                agents.slice(0, 6).map((agent) => {
+                  const boundRoute = routes.find((r) => r.agent_id === agent.id);
+                  const isHealthy = agent.health === 'healthy';
+                  return (
+                    <button
+                      key={agent.id}
+                      onClick={() => onNavigate('agents')}
+                      className="flex items-center gap-2 text-slate-300 w-full text-left group py-1 transition-colors"
+                      title={`${agent.name} (${agent.endpoint_url})`}
+                    >
+                      <span
+                        className={`w-2 h-2 shrink-0 rounded-full ${
+                          isHealthy ? 'bg-emerald-400' : 'bg-slate-600'
+                        }`}
+                      />
+                      <div className="truncate">
+                        <span className="underline underline-offset-2 decoration-neutral-500 group-hover:text-orange-400 group-hover:decoration-orange-400 text-xs font-medium block truncate transition-colors">
+                          {agent.name}
+                        </span>
+                        <span className="text-[10px] text-slate-500 font-mono block truncate">
+                          {boundRoute ? `/gw/${boundRoute.path_segment}` : agent.endpoint_url}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })
+              )}
+            </div>
 
-                <button
-                  onClick={() => onNavigate('agents')}
-                  className="flex items-center gap-2.5 text-slate-300 w-full text-left group py-1 transition-colors"
-                >
-                  <div className="w-5 h-5 bg-blue-500/10 text-blue-400 flex items-center justify-center text-[10px] shrink-0 group-hover:bg-orange-500/20 group-hover:text-orange-400 transition-colors">
-                    <Layers size={12} />
-                  </div>
-                  <span className="underline underline-offset-2 decoration-neutral-500 group-hover:text-orange-400 group-hover:decoration-orange-400 text-xs truncate transition-colors">
-                    Research (:8102)
-                  </span>
-                </button>
+            {/* Core Subsystem Triggers */}
+            <div className="border-t border-neutral-800/80 pt-2.5 mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+              <button
+                onClick={() => onNavigate('tasks')}
+                className="flex items-center gap-2 text-slate-400 hover:text-white text-left group py-0.5 transition-colors"
+              >
+                <Activity size={12} className="text-cyan-400 shrink-0" />
+                <span className="underline underline-offset-2 decoration-neutral-600 group-hover:text-orange-400 group-hover:decoration-orange-400 text-[11px] truncate">
+                  Triage Stream
+                </span>
+              </button>
 
-                <button
-                  onClick={() => onNavigate('agents')}
-                  className="flex items-center gap-2.5 text-slate-300 w-full text-left group py-1 transition-colors"
-                >
-                  <div className="w-5 h-5 bg-rose-500/10 text-rose-400 flex items-center justify-center text-[10px] shrink-0 group-hover:bg-orange-500/20 group-hover:text-orange-400 transition-colors">
-                    <Zap size={12} />
-                  </div>
-                  <span className="underline underline-offset-2 decoration-neutral-500 group-hover:text-orange-400 group-hover:decoration-orange-400 text-xs truncate transition-colors">
-                    Flaky Agent (:8103)
-                  </span>
-                </button>
+              <button
+                onClick={() => onNavigate('gateway')}
+                className="flex items-center gap-2 text-slate-400 hover:text-white text-left group py-0.5 transition-colors"
+              >
+                <Network size={12} className="text-emerald-400 shrink-0" />
+                <span className="underline underline-offset-2 decoration-neutral-600 group-hover:text-orange-400 group-hover:decoration-orange-400 text-[11px] truncate">
+                  Route Registry
+                </span>
+              </button>
 
-                <button
-                  onClick={() => onNavigate('tasks')}
-                  className="flex items-center gap-2.5 text-slate-300 w-full text-left group py-1 transition-colors"
-                >
-                  <div className="w-5 h-5 bg-cyan-500/10 text-cyan-400 flex items-center justify-center text-[10px] shrink-0 group-hover:bg-orange-500/20 group-hover:text-orange-400 transition-colors">
-                    <Activity size={12} />
-                  </div>
-                  <span className="underline underline-offset-2 decoration-neutral-500 group-hover:text-orange-400 group-hover:decoration-orange-400 text-xs truncate transition-colors">
-                    Triage Priority Engine
-                  </span>
-                </button>
+              <button
+                onClick={() => onNavigate('gateway')}
+                className="flex items-center gap-2 text-slate-400 hover:text-white text-left group py-0.5 transition-colors"
+              >
+                <Key size={12} className="text-indigo-400 shrink-0" />
+                <span className="underline underline-offset-2 decoration-neutral-600 group-hover:text-orange-400 group-hover:decoration-orange-400 text-[11px] truncate">
+                  API Key Vault
+                </span>
+              </button>
 
-                <button
-                  onClick={() => onNavigate('tasks')}
-                  className="flex items-center gap-2.5 text-slate-300 w-full text-left group py-1 transition-colors"
-                >
-                  <div className="w-5 h-5 bg-purple-500/10 text-purple-400 flex items-center justify-center text-[10px] shrink-0 group-hover:bg-orange-500/20 group-hover:text-orange-400 transition-colors">
-                    <Clock size={12} />
-                  </div>
-                  <span className="underline underline-offset-2 decoration-neutral-500 group-hover:text-orange-400 group-hover:decoration-orange-400 text-xs truncate transition-colors">
-                    Task Timeline Tap
-                  </span>
-                </button>
-              </div>
-
-              {/* Column 2 */}
-              <div className="space-y-1.5">
-                <button
-                  onClick={() => onNavigate('gateway')}
-                  className="flex items-center gap-2.5 text-slate-300 w-full text-left group py-1 transition-colors"
-                >
-                  <div className="w-5 h-5 bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-[10px] shrink-0 group-hover:bg-orange-500/20 group-hover:text-orange-400 transition-colors">
-                    <Network size={12} />
-                  </div>
-                  <span className="underline underline-offset-2 decoration-neutral-500 group-hover:text-orange-400 group-hover:decoration-orange-400 text-xs truncate transition-colors">
-                    Route Mapping
-                  </span>
-                </button>
-
-                <button
-                  onClick={() => onNavigate('gateway')}
-                  className="flex items-center gap-2.5 text-slate-300 w-full text-left group py-1 transition-colors"
-                >
-                  <div className="w-5 h-5 bg-indigo-500/10 text-indigo-400 flex items-center justify-center text-[10px] shrink-0 group-hover:bg-orange-500/20 group-hover:text-orange-400 transition-colors">
-                    <Key size={12} />
-                  </div>
-                  <span className="underline underline-offset-2 decoration-neutral-500 group-hover:text-orange-400 group-hover:decoration-orange-400 text-xs truncate transition-colors">
-                    API Key Vault
-                  </span>
-                </button>
-
-                <button
-                  onClick={() => onNavigate('tasks')}
-                  className="flex items-center gap-2.5 text-slate-300 w-full text-left group py-1 transition-colors"
-                >
-                  <div className="w-5 h-5 bg-red-500/10 text-red-400 flex items-center justify-center text-[10px] shrink-0 group-hover:bg-orange-500/20 group-hover:text-orange-400 transition-colors">
-                    <Radio size={12} />
-                  </div>
-                  <span className="underline underline-offset-2 decoration-neutral-500 group-hover:text-orange-400 group-hover:decoration-orange-400 text-xs truncate transition-colors">
-                    Redis Event Bus
-                  </span>
-                </button>
-
-                <button
-                  onClick={onOpenCli}
-                  className="flex items-center gap-2.5 text-slate-300 w-full text-left group py-1 transition-colors"
-                >
-                  <div className="w-5 h-5 bg-neutral-800 text-neutral-300 flex items-center justify-center text-[10px] shrink-0 group-hover:bg-orange-500/20 group-hover:text-orange-400 transition-colors">
-                    <Terminal size={12} />
-                  </div>
-                  <span className="underline underline-offset-2 decoration-neutral-500 group-hover:text-orange-400 group-hover:decoration-orange-400 text-xs truncate transition-colors">
-                    Gateway Shell
-                  </span>
-                </button>
-
-                <button
-                  onClick={() => onNavigate('gateway')}
-                  className="flex items-center gap-2.5 text-slate-300 w-full text-left group py-1 transition-colors"
-                >
-                  <div className="w-5 h-5 bg-teal-500/10 text-teal-400 flex items-center justify-center text-[10px] shrink-0 group-hover:bg-orange-500/20 group-hover:text-orange-400 transition-colors">
-                    <Boxes size={12} />
-                  </div>
-                  <span className="underline underline-offset-2 decoration-neutral-500 group-hover:text-orange-400 group-hover:decoration-orange-400 text-xs truncate transition-colors">
-                    Synthetic Note Writer
-                  </span>
-                </button>
-              </div>
+              <button
+                onClick={onOpenCli}
+                className="flex items-center gap-2 text-slate-400 hover:text-white text-left group py-0.5 transition-colors"
+              >
+                <Terminal size={12} className="text-amber-400 shrink-0" />
+                <span className="underline underline-offset-2 decoration-neutral-600 group-hover:text-orange-400 group-hover:decoration-orange-400 text-[11px] truncate">
+                  Gateway Shell
+                </span>
+              </button>
             </div>
           </div>
         </div>
@@ -437,7 +435,7 @@ export function ConsoleHome({
 
       {/* 4. Bottom Row Widgets: Traffic & Latency + Live Feed */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        {/* Widget 4: Traffic & Latency Explorer (col-span-5) */}
+        {/* Widget 4: Traffic & Telemetry Explorer (col-span-5) - Real Live Stats */}
         <div className="lg:col-span-5 bg-[#080808] border border-neutral-800 p-4 flex flex-col justify-between hover:border-neutral-700 transition-colors">
           <div>
             <div className="flex items-center justify-between pb-3 border-b border-neutral-800 mb-3">
@@ -445,7 +443,7 @@ export function ConsoleHome({
                 <GripVertical size={14} className="text-neutral-600 cursor-grab" />
                 <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
                   <span>Traffic & Telemetry</span>
-                  <span className="text-[11px] text-blue-400 font-normal">metrics</span>
+                  <span className="text-[11px] text-blue-400 font-normal">live</span>
                 </h3>
               </div>
               <div className="flex items-center gap-2">
@@ -462,70 +460,99 @@ export function ConsoleHome({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
-              {/* Left Column: Metrics Summary */}
+              {/* Left Column: Real Metrics Summary */}
               <div className="sm:col-span-5 space-y-3">
                 <div>
                   <div className="text-[11px] text-slate-400">Total Tasks Handled</div>
                   <div className="text-lg font-bold text-white flex items-center gap-1.5 pt-0.5">
                     <span>{tasks.length}</span>
-                    <span className="text-[11px] text-emerald-400 flex items-center">
-                      <TrendingUp size={11} /> +12%
+                    <span className="text-[10px] text-slate-400 font-mono">
+                      ({stats ? formatUptime(stats.uptime_seconds) : 'live'} uptime)
                     </span>
                   </div>
                 </div>
 
                 <div>
-                  <div className="text-[11px] text-slate-400">Median Chunk Gap</div>
+                  <div className="text-[11px] text-slate-400">Live Throughput</div>
                   <div className="text-sm font-semibold text-white flex items-center gap-1.5 pt-0.5">
-                    <span>500.6 ms</span>
-                    <span className="text-[11px] text-blue-400 flex items-center">
-                      <TrendingDown size={11} /> 0.2%
-                    </span>
+                    <span className="font-mono">{stats?.events_per_sec ?? 0}</span>
+                    <span className="text-[11px] text-blue-400 font-mono">ev/s</span>
                   </div>
                 </div>
 
                 <div>
-                  <div className="text-[11px] text-slate-400">Upstream Drops (Simulated)</div>
-                  <div className="text-sm font-semibold text-rose-400 flex items-center gap-1 pt-0.5">
-                    <span>{failedTasks.length} dropped</span>
-                    <Info size={11} className="text-slate-500" />
+                  <div className="text-[11px] text-slate-400">Total Events Ingested</div>
+                  <div className="text-sm font-semibold text-emerald-400 flex items-center gap-1.5 pt-0.5 font-mono">
+                    <span>{stats?.total_events ?? 0}</span>
+                    <span className="text-[10px] text-slate-500 font-normal">
+                      ({stats?.dropped_events ?? 0} dropped)
+                    </span>
                   </div>
                 </div>
               </div>
 
-              {/* Right Column: Stacked Telemetry Bar Chart */}
+              {/* Right Column: Real Task State Distribution Bar */}
               <div className="sm:col-span-7">
-                <div className="text-[10px] text-slate-400 text-right mb-1">Volume by Agent (Events)</div>
-                <div className="h-32 flex items-end justify-between gap-1.5 pt-2 border-b border-neutral-800">
-                  {[
-                    { label: 'T-50m', c1: 'h-4 bg-amber-600', c2: 'h-6 bg-blue-600', c3: 'h-2 bg-rose-600' },
-                    { label: 'T-40m', c1: 'h-5 bg-amber-600', c2: 'h-7 bg-blue-600', c3: 'h-1 bg-rose-600' },
-                    { label: 'T-30m', c1: 'h-7 bg-amber-600', c2: 'h-9 bg-blue-600', c3: 'h-3 bg-rose-600' },
-                    { label: 'T-20m', c1: 'h-8 bg-amber-600', c2: 'h-10 bg-blue-600', c3: 'h-2 bg-rose-600' },
-                    { label: 'T-10m', c1: 'h-7 bg-amber-600', c2: 'h-8 bg-blue-600', c3: 'h-3 bg-rose-600' },
-                    { label: 'Now', c1: 'h-9 bg-amber-600', c2: 'h-11 bg-blue-600', c3: 'h-2 bg-rose-600' },
-                  ].map((bar, idx) => (
+                <div className="text-[10px] text-slate-400 text-right mb-1">Task State Distribution</div>
+                
+                {/* Horizontal Segmented Bar */}
+                <div className="h-6 w-full bg-neutral-900 border border-neutral-800 flex overflow-hidden rounded-sm my-2">
+                  {completedPct > 0 && (
                     <div
-                      key={idx}
-                      className="flex-1 flex flex-col items-center gap-1 group cursor-pointer"
+                      style={{ width: `${completedPct}%` }}
+                      className="bg-emerald-600 hover:bg-emerald-500 transition-all flex items-center justify-center text-[10px] font-bold text-white"
+                      title={`Completed: ${completedTasks.length} (${completedPct}%)`}
                     >
-                      <div className="w-full max-w-[24px] flex flex-col-reverse bg-neutral-900 border border-neutral-800 group-hover:brightness-125 transition-all">
-                        <div className={`w-full ${bar.c3}`} title="Flaky/Error drops" />
-                        <div className={`w-full ${bar.c2}`} title="Research stream events" />
-                        <div className={`w-full ${bar.c1}`} title="Echo completions" />
-                      </div>
-                      <span className="text-[9px] text-slate-400 origin-center truncate">
-                        {bar.label}
-                      </span>
+                      {completedPct >= 15 ? `${completedPct}%` : ''}
                     </div>
-                  ))}
+                  )}
+                  {inFlightPct > 0 && (
+                    <div
+                      style={{ width: `${inFlightPct}%` }}
+                      className="bg-blue-600 hover:bg-blue-500 transition-all flex items-center justify-center text-[10px] font-bold text-white"
+                      title={`In-Flight: ${inFlightTasks.length} (${inFlightPct}%)`}
+                    >
+                      {inFlightPct >= 15 ? `${inFlightPct}%` : ''}
+                    </div>
+                  )}
+                  {attentionPct > 0 && (
+                    <div
+                      style={{ width: `${attentionPct}%` }}
+                      className="bg-rose-600 hover:bg-rose-500 transition-all flex items-center justify-center text-[10px] font-bold text-white"
+                      title={`Needs Attention: ${failedTasks.length} (${attentionPct}%)`}
+                    >
+                      {attentionPct >= 15 ? `${attentionPct}%` : ''}
+                    </div>
+                  )}
+                  {totalTasksCount === 0 && (
+                    <div className="w-full flex items-center justify-center text-[10px] text-slate-500 font-mono">
+                      No tasks recorded yet
+                    </div>
+                  )}
                 </div>
-                <div className="flex justify-between items-center text-[9px] text-slate-500 pt-1">
-                  <span>Relative</span>
-                  <div className="flex items-center gap-2">
-                    <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-amber-600" />Echo</span>
-                    <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-blue-600" />Research</span>
-                    <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-rose-600" />Flaky</span>
+
+                {/* Legend with Real Counts */}
+                <div className="space-y-1 pt-1 text-[10px]">
+                  <div className="flex items-center justify-between text-slate-300">
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 bg-emerald-500" />
+                      <span>Completed</span>
+                    </span>
+                    <span className="font-mono text-slate-400">{completedTasks.length} ({completedPct}%)</span>
+                  </div>
+                  <div className="flex items-center justify-between text-slate-300">
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 bg-blue-500" />
+                      <span>In-Flight</span>
+                    </span>
+                    <span className="font-mono text-slate-400">{inFlightTasks.length} ({inFlightPct}%)</span>
+                  </div>
+                  <div className="flex items-center justify-between text-slate-300">
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 bg-rose-500" />
+                      <span>Needs Attention</span>
+                    </span>
+                    <span className="font-mono text-slate-400">{failedTasks.length} ({attentionPct}%)</span>
                   </div>
                 </div>
               </div>
@@ -604,7 +631,7 @@ export function ConsoleHome({
               </button>
             </div>
 
-            {/* Tasks List - Clean borderless rows with subtle divider */}
+            {/* Tasks List */}
             <div className="space-y-1 max-h-52 overflow-y-auto pr-1">
               {displayedTasks.length === 0 ? (
                 <div className="py-8 text-center text-xs text-slate-500">
