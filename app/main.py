@@ -1,10 +1,12 @@
 import logging
 import uuid
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
-from fastapi import FastAPI
+from typing import AsyncGenerator, Optional
+from fastapi import FastAPI, Request, Query, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.database import engine, Base, async_session_maker, get_db
 
 from app.config import settings
 from app.database import engine, Base, async_session_maker
@@ -95,6 +97,21 @@ def create_app() -> FastAPI:
     @app.get("/ready", tags=["health"])
     async def ready():
         return {"status": "ready"}
+
+    @app.get("/tasks")
+    async def get_tasks_alias(
+        request: Request,
+        state: Optional[str] = Query(None),
+        limit: int = Query(100, ge=1, le=500),
+        db: AsyncSession = Depends(get_db),
+    ):
+        accept = request.headers.get("accept", "")
+        if "text/html" in accept and not request.query_params.get("limit"):
+            index_file = os.path.join(dist_dir, "index.html")
+            if os.path.isfile(index_file):
+                return FileResponse(index_file)
+        from app.control.tasks_api import list_tasks
+        return await list_tasks(state=state, limit=limit, db=db)
 
     # Mount dashboard static files if dist exists
     dist_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "dashboard", "dist")
