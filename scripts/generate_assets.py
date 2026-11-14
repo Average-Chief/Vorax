@@ -1,3 +1,4 @@
+# NOTE: real UI captures are produced by scripts/capture_screens.py; this script renders architecture SVGs only.
 import os
 from PIL import Image, ImageDraw, ImageFont
 

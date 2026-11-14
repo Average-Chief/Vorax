@@ -34,9 +34,36 @@ import { getStoredApiKey, setStoredApiKey } from './lib/api';
 
 type Tab = 'home' | 'tasks' | 'agents' | 'gateway';
 
+function parseInitialRoute(): { tab: Tab; taskId: string | null } {
+  try {
+    const path = window.location.pathname;
+    if (path.startsWith('/tasks/')) {
+      const id = path.replace('/tasks/', '').replace(/\/$/, '');
+      if (id) return { tab: 'tasks', taskId: decodeURIComponent(id) };
+    }
+    if (path === '/tasks') return { tab: 'tasks', taskId: null };
+    if (path === '/agents') return { tab: 'agents', taskId: null };
+    if (path === '/gateway') return { tab: 'gateway', taskId: null };
+  } catch (e) {
+    // fallback
+  }
+  return { tab: 'home', taskId: null };
+}
+
 export function App() {
-  const [activeTab, setActiveTab] = useState<Tab>('home');
-  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const initial = parseInitialRoute();
+  const [activeTab, setActiveTab] = useState<Tab>(initial.tab);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(initial.taskId);
+
+  useEffect(() => {
+    if (selectedTaskId) {
+      window.history.replaceState(null, '', `/tasks/${encodeURIComponent(selectedTaskId)}`);
+    } else if (activeTab === 'home') {
+      window.history.replaceState(null, '', '/');
+    } else {
+      window.history.replaceState(null, '', `/${activeTab}`);
+    }
+  }, [activeTab, selectedTaskId]);
   const [apiKey, setApiKey] = useState(getStoredApiKey());
   const [showKeyModal, setShowKeyModal] = useState(false);
   const [showCliModal, setShowCliModal] = useState(false);

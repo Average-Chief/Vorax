@@ -92,6 +92,10 @@ def create_app() -> FastAPI:
     async def healthz():
         return {"status": "ok"}
 
+    @app.get("/ready", tags=["health"])
+    async def ready():
+        return {"status": "ready"}
+
     # Mount dashboard static files if dist exists
     dist_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "dashboard", "dist")
     assets_dir = os.path.join(dist_dir, "assets")
