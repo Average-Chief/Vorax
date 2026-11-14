@@ -24,6 +24,7 @@ import {
   Cpu,
   Copy,
   Check,
+  LogOut,
 } from 'lucide-react';
 import { useWs } from './hooks/useWs';
 import { useLiveTasks } from './hooks/useLiveTasks';
@@ -32,8 +33,9 @@ import { TasksPage } from './pages/Tasks';
 import { TimelinePage } from './pages/Timeline';
 import { AgentsPage } from './pages/Agents';
 import { GatewayPage } from './pages/Gateway';
+import { LoginPage } from './pages/Login';
 import { AgentListItem, GatewayRoute } from './lib/types';
-import { getStoredApiKey, setStoredApiKey, fetchAgents, fetchRoutes } from './lib/api';
+import { getStoredApiKey, setStoredApiKey, fetchAgents, fetchRoutes, isAuthenticated, setAuthenticated } from './lib/api';
 import { StateChip } from './components/StateChip';
 
 type Tab = 'home' | 'tasks' | 'agents' | 'gateway';
@@ -70,6 +72,7 @@ export function App() {
   }, [activeTab, selectedTaskId]);
 
   const [apiKey, setApiKey] = useState(getStoredApiKey());
+  const [isAuthed, setIsAuthed] = useState<boolean>(isAuthenticated());
   const [showKeyModal, setShowKeyModal] = useState(false);
   const [showCliModal, setShowCliModal] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -172,6 +175,17 @@ export function App() {
     : [];
 
   const hasSearchResults = q.length > 0 && (filteredTasks.length > 0 || filteredAgents.length > 0 || filteredRoutes.length > 0);
+
+  if (!isAuthed) {
+    return (
+      <LoginPage
+        onLoginSuccess={(token) => {
+          setApiKey(token);
+          setIsAuthed(true);
+        }}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-black text-slate-100 font-sans selection:bg-neutral-800 selection:text-white">
@@ -610,6 +624,17 @@ export function App() {
                   className="w-full text-left py-1 text-slate-300 hover:text-white text-[11px]"
                 >
                   Configure Gateway Auth Key
+                </button>
+                <button
+                  onClick={() => {
+                    setShowUserMenu(false);
+                    setAuthenticated(false);
+                    setIsAuthed(false);
+                  }}
+                  className="w-full text-left py-1.5 text-rose-400 hover:text-rose-300 text-[11px] flex items-center gap-1.5 border-t border-neutral-800 mt-1 pt-1.5"
+                >
+                  <LogOut size={12} />
+                  <span>Sign Out of Gateway</span>
                 </button>
               </div>
             )}

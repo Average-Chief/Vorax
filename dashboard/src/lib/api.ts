@@ -8,6 +8,7 @@ import {
 } from './types';
 
 const API_KEY_STORAGE = 'a2a_api_key';
+const AUTH_STATUS_STORAGE = 'a2a_auth_status';
 
 export function getStoredApiKey(): string {
   return localStorage.getItem(API_KEY_STORAGE) || 'dev-only-do-not-use-in-prod';
@@ -17,6 +18,24 @@ export function setStoredApiKey(key: string): void {
   if (key) {
     localStorage.setItem(API_KEY_STORAGE, key.trim());
   } else {
+    localStorage.removeItem(API_KEY_STORAGE);
+  }
+}
+
+export function isAuthenticated(): boolean {
+  const status = localStorage.getItem(AUTH_STATUS_STORAGE);
+  if (status === 'false') return false;
+  return localStorage.getItem(API_KEY_STORAGE) !== null || status === 'true';
+}
+
+export function setAuthenticated(status: boolean, key?: string): void {
+  if (status) {
+    localStorage.setItem(AUTH_STATUS_STORAGE, 'true');
+    if (key) {
+      setStoredApiKey(key);
+    }
+  } else {
+    localStorage.setItem(AUTH_STATUS_STORAGE, 'false');
     localStorage.removeItem(API_KEY_STORAGE);
   }
 }
