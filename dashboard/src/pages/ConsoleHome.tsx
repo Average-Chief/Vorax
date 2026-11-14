@@ -151,11 +151,11 @@ export function ConsoleHome({
             <div className="space-y-3.5">
               {/* Item 1 */}
               <div
-                className="flex items-start gap-3 group cursor-pointer border border-transparent hover:border-neutral-800 p-1.5 -m-1.5 transition-colors"
+                className="flex items-start gap-3 group cursor-pointer transition-colors"
                 onClick={() => onNavigate('gateway')}
               >
-                <div className="w-8 h-8 bg-neutral-900 border border-neutral-800 flex items-center justify-center text-blue-400 shrink-0">
-                  <Rocket size={16} />
+                <div className="w-7 h-7 bg-blue-500/10 text-blue-400 flex items-center justify-center shrink-0">
+                  <Rocket size={15} />
                 </div>
                 <div className="space-y-0.5">
                   <div className="text-xs font-semibold text-white group-hover:text-blue-400 flex items-center gap-1 transition-colors">
@@ -170,11 +170,11 @@ export function ConsoleHome({
 
               {/* Item 2 */}
               <div
-                className="flex items-start gap-3 group cursor-pointer border border-transparent hover:border-neutral-800 p-1.5 -m-1.5 transition-colors"
+                className="flex items-start gap-3 group cursor-pointer transition-colors"
                 onClick={() => onNavigate('tasks')}
               >
-                <div className="w-8 h-8 bg-neutral-900 border border-neutral-800 flex items-center justify-center text-rose-400 shrink-0">
-                  <Shield size={16} />
+                <div className="w-7 h-7 bg-rose-500/10 text-rose-400 flex items-center justify-center shrink-0">
+                  <Shield size={15} />
                 </div>
                 <div className="space-y-0.5">
                   <div className="text-xs font-semibold text-white group-hover:text-rose-400 flex items-center gap-1 transition-colors">
@@ -189,11 +189,11 @@ export function ConsoleHome({
 
               {/* Item 3 */}
               <div
-                className="flex items-start gap-3 group cursor-pointer border border-transparent hover:border-neutral-800 p-1.5 -m-1.5 transition-colors"
+                className="flex items-start gap-3 group cursor-pointer transition-colors"
                 onClick={() => onNavigate('agents')}
               >
-                <div className="w-8 h-8 bg-neutral-900 border border-neutral-800 flex items-center justify-center text-emerald-400 shrink-0">
-                  <Cpu size={16} />
+                <div className="w-7 h-7 bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
+                  <Cpu size={15} />
                 </div>
                 <div className="space-y-0.5">
                   <div className="text-xs font-semibold text-white group-hover:text-emerald-400 flex items-center gap-1 transition-colors">
@@ -209,7 +209,7 @@ export function ConsoleHome({
           </div>
         </div>
 
-        {/* Widget 2: Fleet Agents & Subsystems (col-span-5) */}
+        {/* Widget 2: Fleet Agents & Subsystems (col-span-5) - Clean borderless rows */}
         <div className="lg:col-span-5 bg-[#080808] border border-neutral-800 p-4 flex flex-col justify-between hover:border-neutral-700 transition-colors">
           <div>
             <div className="flex items-center justify-between pb-3 border-b border-neutral-800 mb-3">
@@ -233,111 +233,111 @@ export function ConsoleHome({
               </div>
             </div>
 
-            {/* 2-column Grid of Gateway Agents & Subsystems */}
-            <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 text-xs">
+            {/* 2-column Grid of Gateway Agents & Subsystems - BORDERLESS */}
+            <div className="grid grid-cols-2 gap-x-5 gap-y-2 text-xs">
               {/* Column 1 */}
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <button
                   onClick={() => onNavigate('agents')}
-                  className="flex items-center gap-2 text-slate-300 hover:text-white w-full text-left group border border-neutral-900 hover:border-neutral-800 p-1 bg-black"
+                  className="flex items-center gap-2.5 text-slate-300 hover:text-white w-full text-left group py-1 transition-colors"
                 >
-                  <div className="w-5 h-5 bg-neutral-900 border border-amber-800 text-amber-400 flex items-center justify-center font-bold text-[9px]">
+                  <div className="w-5 h-5 bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold text-[9px] shrink-0">
                     EC
                   </div>
-                  <span className="group-hover:underline">Echo Agent (:8101)</span>
+                  <span className="group-hover:underline text-xs truncate">Echo Agent (:8101)</span>
                 </button>
 
                 <button
                   onClick={() => onNavigate('agents')}
-                  className="flex items-center gap-2 text-slate-300 hover:text-white w-full text-left group border border-neutral-900 hover:border-neutral-800 p-1 bg-black"
+                  className="flex items-center gap-2.5 text-slate-300 hover:text-white w-full text-left group py-1 transition-colors"
                 >
-                  <div className="w-5 h-5 bg-neutral-900 border border-blue-800 text-blue-400 flex items-center justify-center text-[10px]">
-                    <Layers size={11} />
+                  <div className="w-5 h-5 bg-blue-500/10 text-blue-400 flex items-center justify-center text-[10px] shrink-0">
+                    <Layers size={12} />
                   </div>
-                  <span className="group-hover:underline">Research (:8102)</span>
+                  <span className="group-hover:underline text-xs truncate">Research (:8102)</span>
                 </button>
 
                 <button
                   onClick={() => onNavigate('agents')}
-                  className="flex items-center gap-2 text-slate-300 hover:text-white w-full text-left group border border-neutral-900 hover:border-neutral-800 p-1 bg-black"
+                  className="flex items-center gap-2.5 text-slate-300 hover:text-white w-full text-left group py-1 transition-colors"
                 >
-                  <div className="w-5 h-5 bg-neutral-900 border border-rose-800 text-rose-400 flex items-center justify-center text-[10px]">
-                    <Zap size={11} />
+                  <div className="w-5 h-5 bg-rose-500/10 text-rose-400 flex items-center justify-center text-[10px] shrink-0">
+                    <Zap size={12} />
                   </div>
-                  <span className="group-hover:underline">Flaky Agent (:8103)</span>
+                  <span className="group-hover:underline text-xs truncate">Flaky Agent (:8103)</span>
                 </button>
 
                 <button
                   onClick={() => onNavigate('tasks')}
-                  className="flex items-center gap-2 text-slate-300 hover:text-white w-full text-left group border border-neutral-900 hover:border-neutral-800 p-1 bg-black"
+                  className="flex items-center gap-2.5 text-slate-300 hover:text-white w-full text-left group py-1 transition-colors"
                 >
-                  <div className="w-5 h-5 bg-neutral-900 border border-cyan-800 text-cyan-400 flex items-center justify-center text-[10px]">
-                    <Activity size={11} />
+                  <div className="w-5 h-5 bg-cyan-500/10 text-cyan-400 flex items-center justify-center text-[10px] shrink-0">
+                    <Activity size={12} />
                   </div>
-                  <span className="group-hover:underline">Triage Priority Engine</span>
+                  <span className="group-hover:underline text-xs truncate">Triage Priority Engine</span>
                 </button>
 
                 <button
                   onClick={() => onNavigate('tasks')}
-                  className="flex items-center gap-2 text-slate-300 hover:text-white w-full text-left group border border-neutral-900 hover:border-neutral-800 p-1 bg-black"
+                  className="flex items-center gap-2.5 text-slate-300 hover:text-white w-full text-left group py-1 transition-colors"
                 >
-                  <div className="w-5 h-5 bg-neutral-900 border border-purple-800 text-purple-400 flex items-center justify-center text-[10px]">
-                    <Clock size={11} />
+                  <div className="w-5 h-5 bg-purple-500/10 text-purple-400 flex items-center justify-center text-[10px] shrink-0">
+                    <Clock size={12} />
                   </div>
-                  <span className="group-hover:underline">Task Timeline Tap</span>
+                  <span className="group-hover:underline text-xs truncate">Task Timeline Tap</span>
                 </button>
               </div>
 
               {/* Column 2 */}
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <button
                   onClick={() => onNavigate('gateway')}
-                  className="flex items-center gap-2 text-slate-300 hover:text-white w-full text-left group border border-neutral-900 hover:border-neutral-800 p-1 bg-black"
+                  className="flex items-center gap-2.5 text-slate-300 hover:text-white w-full text-left group py-1 transition-colors"
                 >
-                  <div className="w-5 h-5 bg-neutral-900 border border-emerald-800 text-emerald-400 flex items-center justify-center text-[10px]">
-                    <Network size={11} />
+                  <div className="w-5 h-5 bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-[10px] shrink-0">
+                    <Network size={12} />
                   </div>
-                  <span className="group-hover:underline">Route Mapping</span>
+                  <span className="group-hover:underline text-xs truncate">Route Mapping</span>
                 </button>
 
                 <button
                   onClick={() => onNavigate('gateway')}
-                  className="flex items-center gap-2 text-slate-300 hover:text-white w-full text-left group border border-neutral-900 hover:border-neutral-800 p-1 bg-black"
+                  className="flex items-center gap-2.5 text-slate-300 hover:text-white w-full text-left group py-1 transition-colors"
                 >
-                  <div className="w-5 h-5 bg-neutral-900 border border-indigo-800 text-indigo-400 flex items-center justify-center text-[10px]">
-                    <Key size={11} />
+                  <div className="w-5 h-5 bg-indigo-500/10 text-indigo-400 flex items-center justify-center text-[10px] shrink-0">
+                    <Key size={12} />
                   </div>
-                  <span className="group-hover:underline">API Key Vault</span>
+                  <span className="group-hover:underline text-xs truncate">API Key Vault</span>
                 </button>
 
                 <button
                   onClick={() => onNavigate('tasks')}
-                  className="flex items-center gap-2 text-slate-300 hover:text-white w-full text-left group border border-neutral-900 hover:border-neutral-800 p-1 bg-black"
+                  className="flex items-center gap-2.5 text-slate-300 hover:text-white w-full text-left group py-1 transition-colors"
                 >
-                  <div className="w-5 h-5 bg-neutral-900 border border-red-800 text-red-400 flex items-center justify-center text-[10px]">
-                    <Radio size={11} />
+                  <div className="w-5 h-5 bg-red-500/10 text-red-400 flex items-center justify-center text-[10px] shrink-0">
+                    <Radio size={12} />
                   </div>
-                  <span className="group-hover:underline">Redis Event Bus</span>
+                  <span className="group-hover:underline text-xs truncate">Redis Event Bus</span>
                 </button>
 
                 <button
                   onClick={onOpenCli}
-                  className="flex items-center gap-2 text-slate-300 hover:text-white w-full text-left group border border-neutral-900 hover:border-neutral-800 p-1 bg-black"
+                  className="flex items-center gap-2.5 text-slate-300 hover:text-white w-full text-left group py-1 transition-colors"
                 >
-                  <div className="w-5 h-5 bg-neutral-900 border border-neutral-700 text-slate-300 flex items-center justify-center text-[10px]">
-                    <Terminal size={11} />
+                  <div className="w-5 h-5 bg-neutral-800 text-neutral-300 flex items-center justify-center text-[10px] shrink-0">
+                    <Terminal size={12} />
                   </div>
-                  <span className="group-hover:underline">Gateway Shell</span>
+                  <span className="group-hover:underline text-xs truncate">Gateway Shell</span>
                 </button>
 
                 <button
                   onClick={() => onNavigate('gateway')}
-                  className="flex items-center gap-2 text-slate-300 hover:text-white w-full text-left group border border-neutral-900 hover:border-neutral-800 p-1 bg-black"
+                  className="flex items-center gap-2.5 text-slate-300 hover:text-white w-full text-left group py-1 transition-colors"
                 >
-                  <div className="w-5 h-5 bg-neutral-900 border border-teal-800 text-teal-400 flex items-center justify-center text-[10px]">
-                    <Boxes size={11} />
+                  <div className="w-5 h-5 bg-teal-500/10 text-teal-400 flex items-center justify-center text-[10px] shrink-0">
+                    <Boxes size={12} />
                   </div>
-                  <span className="group-hover:underline">Synthetic Note Writer</span>
+                  <span className="group-hover:underline text-xs truncate">Synthetic Note Writer</span>
                 </button>
               </div>
             </div>
@@ -584,8 +584,8 @@ export function ConsoleHome({
               </button>
             </div>
 
-            {/* Tasks List */}
-            <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
+            {/* Tasks List - Clean borderless rows with subtle divider */}
+            <div className="space-y-1 max-h-52 overflow-y-auto pr-1">
               {displayedTasks.length === 0 ? (
                 <div className="py-8 text-center text-xs text-slate-500">
                   No tasks matching the selected filter.
@@ -595,7 +595,7 @@ export function ConsoleHome({
                   <div
                     key={t.id}
                     onClick={() => onSelectTask(t.id)}
-                    className="flex items-center justify-between p-2.5 bg-black hover:bg-neutral-900 border border-neutral-800/80 hover:border-neutral-700 cursor-pointer transition-colors group"
+                    className="flex items-center justify-between py-2 px-1 hover:bg-neutral-900/60 border-b border-neutral-900/80 cursor-pointer transition-colors group"
                   >
                     <div className="flex items-center gap-2.5 overflow-hidden">
                       <StateChip state={t.current_state} />
