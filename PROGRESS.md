@@ -7,10 +7,23 @@
 - [x] **M3 — Dashboard**
 - [x] **M4 — Compose polish, demo fleet loop, README**
 - [x] **M4.1 — Launch polish (real captures, timed quickstart, README consistency)**
+- [x] **v0.1 Release & Tier 1 Conformance Verification**
 
 ---
 
 ## Log
+
+### Tier 1 Conformance & Interoperability Verification — Passed (v0.1 Tagged)
+- **Official Google Reference Implementations**: Cloned `github.com/a2aproject/a2a-samples` and ran reference agents using official `a2a-sdk` v1.3.0 (`scripts/run_ref_helloworld.py` and `scripts/run_ref_streaming.py`).
+- **Protocol Conformance**:
+  - Validated both v0.3 methods (`message/send`, `message/stream`) and modern v1.0 methods (`SendMessage`, `SendStreamingMessage`).
+  - Handled nested payload extraction (`task`, `statusUpdate`, `artifactUpdate`) and normalized protobuf enum states (`TASK_STATE_*` -> canonical lowercase).
+  - Queried PostgreSQL `task_events` for `parse_error`: **0 parse errors** across all non-streaming and streaming runs.
+- **Timeline & Monotonicity**:
+  - Reconstructed timelines verified with strictly monotonic sequence numbers (`seq=1..7`) and millisecond-accurate latencies.
+- **Real Process Chaos (`SIGKILL`)**:
+  - Mid-stream termination of the official agent via `kill -9` triggered clean TCP reset detection, zero loss of preceding events, synthesis of forensic `gateway.note` with transport error detail, and non-blocking client stream closure.
+- **Tagged**: `v0.1` confirmed on `main`.
 
 ### Milestone 1 — Completed
 - **Skeleton & Config**: Created `pyproject.toml`, `app/config.py`, `app/database.py`, and `app/main.py` with FastAPI app factory, CORS, and startup lifespan.
