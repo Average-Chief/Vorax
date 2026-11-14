@@ -31,7 +31,7 @@ docker compose --profile demo up
 
 Open http://localhost:8000 in your browser.
 
-*Wall-clock verified on clean compose: ~10.8s from launch to `/ready` and first visible task (under 7.4s on cached start).*
+*First run after cloning takes 1–3 minutes due to initial Docker image build (compiling Python dependencies and building the React dashboard). Subsequent runs with cached images take ~7 seconds to start and show active tasks.*
 
 The demo profile automatically spins up PostgreSQL, Redis, the gateway API, three demo agents (echo, research, flaky), and a background traffic generator.
 
@@ -70,6 +70,8 @@ To use the gateway with your own upstream agent:
 
 Per-task observability and transport failure recovery are fundamentally distinct from API gateways (such as Kong or Envoy) which route raw bytes, and agent frameworks (such as LangGraph or CrewAI) which orchestrate internal logic. A2A Gateway operates at the boundary where autonomous agents communicate with each other over unpredictable networks.
 
+The closest direct competitor is **agentgateway**, which routes A2A protocol frames. This project's bet is that **per-task observability is the empty lane**: when an autonomous agent dies midway through a multi-step streaming task, operations teams need an append-only forensic event store and a triage timeline, not just an API routing table. We have not yet benchmarked head-to-head against agentgateway; that empirical comparison is on the v0.2 roadmap once our data plane abstraction stabilizes.
+
 Standard HTTP proxies route bytes, but they are unaware of task lifecycles or state transitions:
 
 | Concern | HTTP-Grade Proxy (Nginx, Traefik, Envoy) | A2A Gateway |
@@ -82,7 +84,7 @@ Standard HTTP proxies route bytes, but they are unaware of task lifecycles or st
 
 Test persistence is the proof point: if an upstream drops mid-stream, the gateway must record forensic evidence that neither the caller nor the callee can record. This architectural guarantee is verified in our automated test suite by `test_timeline_persistence.py::test_reconstruct_after_restart`. When an upstream agent drops a TCP connection midway through a task, restarting the gateway process in-process produces zero data loss: querying `/control/tasks/{id}/timeline` returns the full chronological sequence of upstream steps plus the synthetic gateway forensic note.
 
-*(Deferred to v0.2 milestone: head-to-head latency bake-off against Envoy + ext-proc once the data plane stabilizes).*
+*(Deferred to v0.2 milestone: head-to-head latency and throughput bake-off against agentgateway and Envoy + ext-proc).*
 
 For comprehensive technical specifications, read [docs/architecture.md](docs/architecture.md).
 
@@ -141,8 +143,8 @@ Designed for teams running hundreds to low-thousands of tasks per minute. Not op
 ## Roadmap
 
 The following capabilities are deferred for future releases:
+- Head-to-head empirical benchmark against agentgateway and Envoy + ext-proc (v0.2 milestone)
 - Reproducible wrk / k6 benchmark suite under `scripts/bench/` (v0.2 milestone)
-- Latency and throughput bake-off against Envoy + ext-proc (v0.2 milestone)
 - Automatic retries with exponential backoff
 - Dead-letter queue (DLQ) inspection interface
 - Per-route rate limiting

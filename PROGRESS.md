@@ -94,18 +94,16 @@
     - `docs/assets/gateway.png`: Real control plane routes and token management interface (non-white ratio: 0.9989).
     - `docs/assets/hero.gif`: 6-second motion capture of active multi-step research streaming task sampled at 5fps and assembled with palettegen/paletteuse (size: 0.16 MB, well under the 3 MB threshold).
   - Added header comment to `scripts/generate_assets.py` noting that real UI captures are produced by `scripts/capture_screens.py`.
-- **Timed Five-Minute Test**:
+- **Timed Quickstart & Cold Build Reality**:
   - Timed clone and demo fleet launch in a clean test directory (`/tmp/a2a-gateway-test`):
     - Git clone: 0.25s
-    - Cold build to `/ready`: 10.8s
-    - Cold build to first visible task: 10.8s
-    - Cached start to `/ready`: 6.8s
-    - Cached start to first visible task: 7.4s
-  - Documented verified wall-clock numbers in `README.md` and `PROGRESS.md`.
-- **README Bake-Off & Positioning Consistency**:
+    - Initial cold build (from scratch without pre-cached layers): ~1–3 minutes (pulling base images, Python dependency install, React dashboard Vite compile)
+    - Subsequent runs with cached images: ~7.4s to start and show active tasks in the dashboard
+  - Documented honest first-run vs. subsequent-run expectations in `README.md` and `PROGRESS.md`.
+- **README Bake-Off & Competitor Positioning**:
   - Restructured "What makes this different" section with explicit thesis statement on per-task lifecycle observability and transport failure recovery vs generic byte routers (Envoy/Kong) and orchestration frameworks (LangGraph/CrewAI).
-  - Clarified test persistence as proof point and deferred head-to-head Envoy latency bake-off to v0.2.
-  - Added v0.2 benchmark suite note to Roadmap.
+  - Explicitly named direct A2A competitor **agentgateway**, positioning our per-task forensic event store and triage UI as the differentiator, with head-to-head empirical benchmarking placed on the v0.2 roadmap.
+  - Clarified test persistence as proof point and added v0.2 benchmark suite note to Roadmap.
 
 ---
 
