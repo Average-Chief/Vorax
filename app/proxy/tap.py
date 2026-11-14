@@ -12,30 +12,48 @@ def parse_rpc_payload(data_dict: dict[str, Any]) -> TapEvent:
     # If wrapped in JSON-RPC result
     payload = data_dict.get("result") if isinstance(data_dict.get("result"), dict) else data_dict
 
-    task_id = payload.get("taskId") or payload.get("id")
+    # In v1.0 / Google SDK, payload might be nested under "task", "statusUpdate", or "artifactUpdate"
+    inner = payload
+    kind = payload.get("kind")
+    if not kind:
+        if "task" in payload and isinstance(payload["task"], dict):
+            inner = payload["task"]
+            kind = "task"
+        elif "statusUpdate" in payload and isinstance(payload["statusUpdate"], dict):
+            inner = payload["statusUpdate"]
+            kind = "status-update"
+        elif "artifactUpdate" in payload and isinstance(payload["artifactUpdate"], dict):
+            inner = payload["artifactUpdate"]
+            kind = "artifact-update"
+        elif "error" in data_dict:
+            kind = "error"
+
+    task_id = inner.get("taskId") or inner.get("id") or payload.get("taskId") or payload.get("id")
     if task_id is not None:
         task_id = str(task_id)
 
-    context_id = payload.get("contextId")
+    context_id = inner.get("contextId") or payload.get("contextId")
     if context_id is not None:
         context_id = str(context_id)
 
-    kind = payload.get("kind")
-    if not kind and "error" in data_dict:
-        kind = "error"
-
     state: Optional[str] = None
-    status_field = payload.get("status")
+    status_field = inner.get("status") if isinstance(inner.get("status"), dict) else payload.get("status")
     if isinstance(status_field, dict):
         state = status_field.get("state")
+    elif isinstance(inner.get("state"), str):
+        state = inner.get("state")
     elif isinstance(payload.get("state"), str):
         state = payload.get("state")
     elif "error" in data_dict:
         state = "failed"
 
-    is_final = payload.get("final")
+    # Normalize proto enum state e.g. TASK_STATE_WORKING -> working
+    if state and state.startswith("TASK_STATE_"):
+        state = state.replace("TASK_STATE_", "").lower().replace("_", "-")
+
+    is_final = inner.get("final") if "final" in inner else payload.get("final")
     if is_final is None:
-        is_final = payload.get("is_final")
+        is_final = inner.get("is_final") if "is_final" in inner else payload.get("is_final")
 
     if is_final is None and state in ("completed", "failed", "canceled", "rejected"):
         is_final = True

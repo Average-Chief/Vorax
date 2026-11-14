@@ -69,7 +69,7 @@ async def proxy_rpc(
         )
 
     # 3. Setup tap callback
-    should_tap = method in ("message/send", "message/stream")
+    should_tap = method in ("message/send", "message/stream", "SendMessage", "SendStreamingMessage")
 
     def on_event_callback(event: TapEvent) -> None:
         if not should_tap and event.kind != "gateway.note":
