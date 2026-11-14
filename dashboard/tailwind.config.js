@@ -6,12 +6,23 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
+    borderRadius: {
+      none: '0px',
+      sm: '0px',
+      DEFAULT: '0px',
+      md: '0px',
+      lg: '0px',
+      xl: '0px',
+      '2xl': '0px',
+      '3xl': '0px',
+      full: '0px',
+    },
     extend: {
       colors: {
-        background: '#090d16',
-        card: '#111726',
-        border: '#1e293b',
-        muted: '#94a3b8',
+        background: '#000000',
+        card: '#0a0a0a',
+        border: '#1f1f1f',
+        muted: '#737373',
       },
       animation: {
         'pulse-subtle': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
@@ -20,4 +31,3 @@ export default {
   },
   plugins: [],
 }
-
