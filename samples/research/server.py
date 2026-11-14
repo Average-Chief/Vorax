@@ -159,8 +159,8 @@ async def handle_rpc(request: Request):
     method = payload.get("method")
     params = payload.get("params", {})
 
-    task_id = str(uuid.uuid4())
-    context_id = str(uuid.uuid4())
+    task_id = params.get("taskId") or str(uuid.uuid4())
+    context_id = params.get("contextId") or str(uuid.uuid4())
 
     if method == "message/stream":
         return StreamingResponse(

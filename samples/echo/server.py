@@ -49,11 +49,11 @@ async def handle_rpc(request: Request):
         parts = message.get("parts", [])
         text_content = ""
         for p in parts:
-            if p.get("kind") == "text":
+            if p.get("kind") == "text" or p.get("type") == "text":
                 text_content += p.get("text", "")
 
-        task_id = str(uuid.uuid4())
-        context_id = str(uuid.uuid4())
+        task_id = params.get("taskId") or str(uuid.uuid4())
+        context_id = params.get("contextId") or str(uuid.uuid4())
         now_iso = datetime.now(timezone.utc).isoformat()
 
         return {
