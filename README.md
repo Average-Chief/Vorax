@@ -92,7 +92,7 @@ For comprehensive technical specifications, read [docs/architecture.md](docs/arc
 
 ## Features
 
-- **Unbuffered Streaming Proxy:** Passes `message/stream` SSE events through to the caller with zero buffer delays. Automated tests verify median chunk arrival gaps remain intact (~500 ms).
+- **Low-Latency Streaming Proxy:** Forwards SSE events incrementally without buffering the complete response. Upstream chunk timing is preserved within minimal frame parsing overhead (automated tests verify median chunk arrival gaps remain within ~500 ms).
 - **Per-Task Event Timeline:** Displays chronological status updates, latency in milliseconds per event, and expandable message text previews.
 - **Forensic `gateway.note` Events:** Generates synthetic forensic events when upstream connections reset or reject credentials, allowing diagnosis without accessing remote agent logs.
 - **Dashboard with Triage Order:** Sorts tasks automatically so failures and input-required states appear first, followed by active in-flight tasks and completed tasks.
@@ -115,10 +115,34 @@ For comprehensive technical specifications, read [docs/architecture.md](docs/arc
 ## Architecture
 
 The gateway runs a single process containing two planes:
-1. **Hot Data Plane:** Validates keys against a 5-second in-memory cache, forwards bytes directly to upstream agents via `httpx`, and emits events non-blockingly into an in-memory queue.
-2. **Cold Control Plane:** Consumes queued events in a background worker, commits atomic updates to PostgreSQL, publishes to Redis, and serves the REST API, WebSocket feed, and static React dashboard.
+1. **Hot Data Plane:** Validates keys against a 5-second in-memory cache, forwards bytes directly to upstream agents via `httpx`, and emits events non-blockingly into an in-memory queue to maintain low-latency streaming without waiting on disk writes.
+2. **Cold Control Plane:** Consumes queued events in a background worker, commits atomic updates to PostgreSQL, publishes ephemeral deltas to Redis, and serves the REST API, WebSocket feed, and static React dashboard.
 
 All forwarding logic is encapsulated behind the `ProxyBackend` protocol in `app/proxy/interface.py`, enabling future data plane implementations (such as Rust or Envoy) without modifying the control plane. For details, read [docs/architecture.md](docs/architecture.md).
+
+---
+
+## Durability and Failure Semantics
+
+A2A Gateway uses asynchronous write-behind persistence to minimize latency on the streaming hot path:
+
+- **Upstream failures:** When an upstream agent disconnects, resets its connection, or times out, the gateway stops accepting new upstream events, drains previously captured events from the FIFO queue into PostgreSQL, and records a synthetic `gateway.note` describing the failure. This preserves the captured event history, provided PostgreSQL remains available and the gateway process remains alive long enough to complete the drain.
+- **Graceful gateway shutdown:** On `SIGTERM`, the gateway stops accepting new inbound work and executes a 5-second drain loop on pending in-memory events before exiting.
+- **Abrupt gateway termination:** An ungraceful process termination, including `SIGKILL`, can result in the loss of events that have not yet been committed to PostgreSQL.
+- **Queue backpressure:** The in-memory buffer is bounded (`EVENT_QUEUE_MAXSIZE=10000`). If saturated under extreme write loads, events are dropped with `stats["dropped_events"]` incremented to prevent stalling upstream HTTP streams.
+- **Redis failure:** Redis is used exclusively for ephemeral dashboard event distribution. Its unavailability does not affect PostgreSQL event durability or upstream proxying.
+- **Database failure:** Events awaiting persistence cannot be considered durable. When PostgreSQL is unreachable, the gateway logs write failures and continues streaming in degraded mode.
+- **Observation boundary:** The gateway reconstructs what it observed over the wire across the A2A JSON-RPC transport. It cannot reconstruct internal agent reasoning, scratchpads, or unexposed tool executions that were never emitted in protocol frames.
+
+PostgreSQL is the durable source of truth. The in-memory queue is a performance optimisation, not a durable message broker.
+
+---
+
+## Security Boundaries & Limitations
+
+- **Gateway Bearer Keys:** Hashed using bcrypt with prefix tracking (`a2a_live_...`) and cached in-memory for 5 seconds. Revocations invalidate the local cache immediately.
+- **Upstream Agent Credentials (v0.1 Limitation):** Upstream credentials (`registered_agents.upstream_credential`) are stored as plaintext columns in PostgreSQL to allow forwarding on outbound hops. Restrict database access accordingly. Application-level envelope encryption (AES-256-GCM with external key management) is scheduled for v0.2.
+- **Development Key Warning:** The bundled key (`dev-only-do-not-use-in-prod`) is for local testing only. Change `ADMIN_KEY` before exposing the gateway to any non-loopback interface.
 
 ---
 

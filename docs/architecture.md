@@ -65,17 +65,15 @@ State is derived from events, not overwritten arbitrarily:
 - `tasks` is a denormalized projection tracking current state, started timestamp, last active timestamp, and terminal flags, maintained atomically by the writer.
 - Reconstructed timelines on `GET /control/tasks/{id}/timeline` rebuild purely from the ordered sequence in `task_events`.
 
-### 4. Acknowledgment Semantics
-The gateway operates under **persist-before-acknowledged** internal semantics:
-- The tap observes bytes as they traverse the hot path and immediately delegates them to `asyncio.Queue` via non-blocking `put_nowait()`.
-- If the queue exceeds `EVENT_QUEUE_MAXSIZE`, the gateway increments a `dropped_events` counter rather than blocking caller stream transmission.
-- *Explicit caveat:* Persisted does not equal delivered to caller; delivered does not equal persisted. The tap observes bytes on the wire as they pass, ensuring protocol pass-through integrity without introducing buffering overhead.
+### 4. Asynchronous Write-Behind & Queue Backpressure
+The gateway operates under **asynchronous write-behind** semantics to keep streaming hot-path latency low:
+- The incremental SSE tap observes frames as they traverse the data plane and places typed `TapEvent`s into an in-memory `asyncio.Queue` via non-blocking `put_nowait()`.
+- If the queue exceeds `EVENT_QUEUE_MAXSIZE` (default: 10,000), the gateway increments `stats["dropped_events"]` and logs a warning rather than stalling upstream HTTP streaming.
+- Delivered to caller does not equal committed to PostgreSQL. The tap prioritizes timely packet delivery over synchronous persistence overhead.
 
-### 5. What Happens When the Gateway Restarts?
-Consider an in-flight research task streaming multiple steps when the gateway process abruptly restarts:
-1. Prior to restart, every event that passed through the gateway was persisted to `task_events` with an incremental sequence number.
-2. The caller's connection drops cleanly per standard TCP stream termination. Upstream network errors trigger synthetic `gateway.note` events recording the exact connection reset context.
-3. Upon gateway restart, the database contains all prior events intact.
-4. Calling `/control/tasks/{id}/timeline` immediately reconstructs the exact state of the task up to the interruption, including the forensic evidence of where and why the connection died.
-5. In-flight history survives restarts by design without requiring distributed transaction locks.
+### 5. Failure Semantics: Upstream Drop vs. Gateway Crash
+- **Upstream Agent Failure (Handled):** When an upstream agent drops connection or times out, the gateway stops accepting new upstream bytes, drains all prior events in the FIFO queue into PostgreSQL, and appends a synthetic `gateway.note` forensic record.
+- **Graceful Gateway Shutdown (`SIGTERM`):** The gateway executes a 5-second drain loop on pending in-memory events before exiting.
+- **Abrupt Gateway Termination (`SIGKILL`):** Uncommitted events remaining in the in-memory queue will not be persisted.
+- **Observation Boundary:** The gateway records what was transmitted across the A2A wire. It does not observe internal agent scratchpads or unexposed tool executions.
 
