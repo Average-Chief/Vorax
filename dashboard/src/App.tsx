@@ -35,7 +35,8 @@ import { AgentsPage } from './pages/Agents';
 import { GatewayPage } from './pages/Gateway';
 import { LoginPage } from './pages/Login';
 import { AgentListItem, GatewayRoute } from './lib/types';
-import { getStoredApiKey, setStoredApiKey, fetchAgents, fetchRoutes, isAuthenticated, setAuthenticated } from './lib/api';
+import { getStoredApiKey, setStoredApiKey, fetchAgents, fetchRoutes } from './lib/api';
+import { isDashboardAuthenticated, logoutDashboard } from './lib/auth';
 import { StateChip } from './components/StateChip';
 
 type Tab = 'home' | 'tasks' | 'agents' | 'gateway';
@@ -72,7 +73,8 @@ export function App() {
   }, [activeTab, selectedTaskId]);
 
   const [apiKey, setApiKey] = useState(getStoredApiKey());
-  const [isAuthed, setIsAuthed] = useState<boolean>(isAuthenticated());
+  const [isAuthed, setIsAuthed] = useState<boolean>(isDashboardAuthenticated());
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const [showKeyModal, setShowKeyModal] = useState(false);
   const [showCliModal, setShowCliModal] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -179,8 +181,7 @@ export function App() {
   if (!isAuthed) {
     return (
       <LoginPage
-        onLoginSuccess={(token) => {
-          setApiKey(token);
+        onLoginSuccess={() => {
           setIsAuthed(true);
         }}
       />
@@ -619,6 +620,15 @@ export function App() {
                 <button
                   onClick={() => {
                     setShowUserMenu(false);
+                    setShowChangePasswordModal(true);
+                  }}
+                  className="w-full text-left py-1 text-slate-300 hover:text-white text-[11px]"
+                >
+                  Change Admin Password
+                </button>
+                <button
+                  onClick={() => {
+                    setShowUserMenu(false);
                     setShowKeyModal(true);
                   }}
                   className="w-full text-left py-1 text-slate-300 hover:text-white text-[11px]"
@@ -628,7 +638,7 @@ export function App() {
                 <button
                   onClick={() => {
                     setShowUserMenu(false);
-                    setAuthenticated(false);
+                    logoutDashboard();
                     setIsAuthed(false);
                   }}
                   className="w-full text-left py-1.5 text-rose-400 hover:text-rose-300 text-[11px] flex items-center gap-1.5 border-t border-neutral-800 mt-1 pt-1.5"
@@ -933,6 +943,24 @@ export function App() {
                 Close Shell
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 5b. Change Admin Password Modal */}
+      {showChangePasswordModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm">
+          <div className="relative max-w-md w-full">
+            <button
+              onClick={() => setShowChangePasswordModal(false)}
+              className="absolute -top-8 right-0 text-slate-400 hover:text-white flex items-center gap-1 text-xs"
+            >
+              <X size={14} /> Close
+            </button>
+            <LoginPage
+              initialMode="change_password"
+              onLoginSuccess={() => setShowChangePasswordModal(false)}
+            />
           </div>
         </div>
       )}
