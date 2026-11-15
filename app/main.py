@@ -121,6 +121,10 @@ def create_app() -> FastAPI:
 
     @app.get("/{full_path:path}")
     async def spa_fallback(full_path: str):
+        if full_path:
+            target_file = os.path.join(dist_dir, full_path)
+            if os.path.isfile(target_file):
+                return FileResponse(target_file)
         index_file = os.path.join(dist_dir, "index.html")
         if os.path.isfile(index_file):
             return FileResponse(index_file)

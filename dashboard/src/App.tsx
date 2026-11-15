@@ -25,6 +25,7 @@ import { AgentListItem, GatewayRoute } from './lib/types';
 import { getStoredApiKey, setStoredApiKey, fetchAgents, fetchRoutes } from './lib/api';
 import { isDashboardAuthenticated, logoutDashboard } from './lib/auth';
 import { StateChip } from './components/StateChip';
+import { Logo } from './components/Logo';
 
 type Tab = 'home' | 'tasks' | 'agents' | 'gateway';
 
@@ -194,12 +195,10 @@ export function App() {
               setSelectedTaskId(null);
               setActiveTab('home');
             }}
-            className="flex items-center gap-2 cursor-pointer group px-1 py-0.5 hover:bg-neutral-900 transition-colors"
+            className="flex items-center gap-2.5 cursor-pointer group px-1 py-0.5 hover:bg-neutral-900 transition-colors"
             title="A2A Gateway Console Home"
           >
-            <div className="w-5 h-5 bg-white text-black flex items-center justify-center font-bold text-[10px] tracking-wider">
-              A2A
-            </div>
+            <Logo className="h-5 w-auto" />
             <div className="flex items-baseline gap-1.5">
               <span className="font-bold text-white text-xs tracking-tight">Gateway</span>
               <span className="text-[10px] text-slate-500 font-mono">v0.1</span>

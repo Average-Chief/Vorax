@@ -6,6 +6,7 @@ import {
   getAdminUsername,
   isDefaultPassword,
 } from '../lib/auth';
+import { Logo } from '../components/Logo';
 
 interface LoginPageProps {
   onLoginSuccess: () => void;
@@ -83,10 +84,8 @@ export function LoginPage({ onLoginSuccess, initialMode = 'login' }: LoginPagePr
       <div className="w-full max-w-md space-y-6">
         {/* Brand Header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center gap-2 mb-1">
-            <div className="w-7 h-7 bg-white text-black flex items-center justify-center font-bold text-xs tracking-wider">
-              A2A
-            </div>
+          <div className="inline-flex items-center justify-center gap-3 mb-1">
+            <Logo className="h-8 w-auto" />
             <span className="font-bold text-lg text-white tracking-tight">Gateway Console</span>
             <span className="text-[10px] text-slate-500 font-mono border border-neutral-800 px-1 py-0.2">v0.1</span>
           </div>
