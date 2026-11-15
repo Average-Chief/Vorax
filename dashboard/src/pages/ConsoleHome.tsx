@@ -3,25 +3,14 @@ import {
   Rocket,
   Shield,
   Activity,
-  Layers,
-  Server,
-  Network,
-  Key,
-  Radio,
   Terminal,
-  Boxes,
-  Zap,
   ArrowUpRight,
-  MoreVertical,
-  GripVertical,
   X,
-  Info,
-  Clock,
-  AlertTriangle,
-  CheckCircle2,
   Cpu,
   RefreshCw,
   Plus,
+  Network,
+  Key,
 } from 'lucide-react';
 import { AgentListItem, GatewayRoute, StatsResponse, TaskSummary } from '../lib/types';
 import { fetchAgents, fetchRoutes, fetchStats } from '../lib/api';
@@ -151,11 +140,9 @@ export function ConsoleHome({
 
       {/* 2. Console Title & Actions Bar */}
       <div className="flex items-center justify-between pb-1">
-        <div className="flex items-center gap-2">
+        <div>
           <h1 className="text-xl font-bold text-white tracking-tight">Gateway Console</h1>
-          <span className="text-xs text-blue-400 hover:underline cursor-pointer flex items-center gap-0.5">
-            overview
-          </span>
+          <p className="text-xs text-slate-400">Live observability, telemetry metrics, and agent triage</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -180,14 +167,8 @@ export function ConsoleHome({
         {/* Widget 1: Getting Started & Core Capabilities (col-span-4) */}
         <div className="lg:col-span-4 bg-[#080808] border border-neutral-800 p-4 flex flex-col justify-between hover:border-neutral-700 transition-colors">
           <div>
-            <div className="flex items-center justify-between pb-3 border-b border-neutral-800 mb-3">
-              <div className="flex items-center gap-2">
-                <GripVertical size={14} className="text-neutral-600 cursor-grab" />
-                <h3 className="text-sm font-bold text-white">Gateway Quickstart</h3>
-              </div>
-              <button className="text-neutral-400 hover:text-white p-0.5">
-                <MoreVertical size={14} />
-              </button>
+            <div className="pb-3 border-b border-neutral-800 mb-3">
+              <h3 className="text-sm font-bold text-white">Gateway Quickstart</h3>
             </div>
 
             <div className="space-y-3.5">
@@ -255,24 +236,16 @@ export function ConsoleHome({
         <div className="lg:col-span-5 bg-[#080808] border border-neutral-800 p-4 flex flex-col justify-between hover:border-neutral-700 transition-colors">
           <div>
             <div className="flex items-center justify-between pb-3 border-b border-neutral-800 mb-3">
-              <div className="flex items-center gap-2">
-                <GripVertical size={14} className="text-neutral-600 cursor-grab" />
-                <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
-                  <span>Registered Agents ({agents.length})</span>
-                  <span className="text-[11px] text-blue-400 font-normal">fleet</span>
-                </h3>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => onNavigate('agents')}
-                  className="px-2.5 py-1 text-[11px] font-medium bg-black hover:bg-neutral-900 text-slate-300 border border-neutral-800 transition-colors"
-                >
-                  Manage Agents
-                </button>
-                <button className="text-neutral-400 hover:text-white p-0.5">
-                  <MoreVertical size={14} />
-                </button>
-              </div>
+              <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
+                <span>Registered Agents ({agents.length})</span>
+                <span className="text-[11px] text-blue-400 font-normal">fleet</span>
+              </h3>
+              <button
+                onClick={() => onNavigate('agents')}
+                className="px-2.5 py-1 text-[11px] font-medium bg-black hover:bg-neutral-900 text-slate-300 border border-neutral-800 transition-colors"
+              >
+                Manage Agents
+              </button>
             </div>
 
             {/* Dynamic Grid of Actual Registered Upstream Agents */}
@@ -365,17 +338,11 @@ export function ConsoleHome({
         {/* Widget 3: Gateway Health & Triage Status (col-span-3) */}
         <div className="lg:col-span-3 bg-[#080808] border border-neutral-800 p-4 flex flex-col justify-between hover:border-neutral-700 transition-colors">
           <div>
-            <div className="flex items-center justify-between pb-3 border-b border-neutral-800 mb-3">
-              <div className="flex items-center gap-2">
-                <GripVertical size={14} className="text-neutral-600 cursor-grab" />
-                <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
-                  <span>Gateway Health</span>
-                  <span className="text-[11px] text-blue-400 font-normal">live</span>
-                </h3>
-              </div>
-              <button className="text-neutral-400 hover:text-white p-0.5">
-                <MoreVertical size={14} />
-              </button>
+            <div className="pb-3 border-b border-neutral-800 mb-3">
+              <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
+                <span>Gateway Health</span>
+                <span className="text-[11px] text-blue-400 font-normal">live</span>
+              </h3>
             </div>
 
             <div className="space-y-4">
@@ -438,25 +405,11 @@ export function ConsoleHome({
         {/* Widget 4: Traffic & Telemetry Explorer (col-span-5) - Real Live Stats */}
         <div className="lg:col-span-5 bg-[#080808] border border-neutral-800 p-4 flex flex-col justify-between hover:border-neutral-700 transition-colors">
           <div>
-            <div className="flex items-center justify-between pb-3 border-b border-neutral-800 mb-3">
-              <div className="flex items-center gap-2">
-                <GripVertical size={14} className="text-neutral-600 cursor-grab" />
-                <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
-                  <span>Traffic & Telemetry</span>
-                  <span className="text-[11px] text-blue-400 font-normal">live</span>
-                </h3>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => onNavigate('tasks')}
-                  className="px-2.5 py-1 text-[11px] font-medium bg-black hover:bg-neutral-900 text-slate-300 border border-neutral-800 transition-colors"
-                >
-                  Stream Logs
-                </button>
-                <button className="text-neutral-400 hover:text-white p-0.5">
-                  <MoreVertical size={14} />
-                </button>
-              </div>
+            <div className="pb-3 border-b border-neutral-800 mb-3">
+              <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
+                <span>Traffic & Telemetry</span>
+                <span className="text-[11px] text-blue-400 font-normal">live</span>
+              </h3>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
@@ -564,13 +517,10 @@ export function ConsoleHome({
         <div className="lg:col-span-7 bg-[#080808] border border-neutral-800 p-4 flex flex-col justify-between hover:border-neutral-700 transition-colors">
           <div>
             <div className="flex items-center justify-between pb-3 border-b border-neutral-800 mb-2">
-              <div className="flex items-center gap-2">
-                <GripVertical size={14} className="text-neutral-600 cursor-grab" />
-                <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
-                  <span>Live Agent Tasks Stream</span>
-                  <span className="text-[11px] text-blue-400 font-normal">triage</span>
-                </h3>
-              </div>
+              <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
+                <span>Live Agent Tasks Stream</span>
+                <span className="text-[11px] text-blue-400 font-normal">triage</span>
+              </h3>
               <button
                 onClick={() => onNavigate('tasks')}
                 className="text-xs text-blue-400 hover:text-orange-400 font-medium flex items-center gap-1 group transition-colors"

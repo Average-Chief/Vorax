@@ -2,26 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   Search,
   Bell,
-  HelpCircle,
   Settings,
   Terminal,
   ChevronDown,
-  LayoutGrid,
-  Menu,
   X,
-  Server,
-  Network,
-  Layers,
-  Key,
-  Radio,
-  Activity,
-  Boxes,
-  Zap,
-  Globe,
   AlertTriangle,
   ArrowRight,
+  ArrowLeft,
   RefreshCw,
-  Cpu,
   Copy,
   Check,
   LogOut,
@@ -78,10 +66,8 @@ export function App() {
   const [showKeyModal, setShowKeyModal] = useState(false);
   const [showCliModal, setShowCliModal] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [showServicesMenu, setShowServicesMenu] = useState(false);
   const [showEnvMenu, setShowEnvMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
 
@@ -114,7 +100,6 @@ export function App() {
         setTimeout(() => searchInputRef.current?.focus(), 50);
       } else if (e.key === 'Escape') {
         setSearchOpen(false);
-        setShowServicesMenu(false);
         setShowNotifications(false);
         setShowEnvMenu(false);
         setShowUserMenu(false);
@@ -231,10 +216,10 @@ export function App() {
 
   return (
     <div className="min-h-screen flex flex-col bg-black text-slate-100 font-sans selection:bg-neutral-800 selection:text-white">
-      {/* 1. Pure Black Top Navigation Bar */}
-      <header className="h-11 bg-black border-b border-neutral-800 px-3 flex items-center justify-between text-xs select-none sticky top-0 z-50">
-        {/* Left Side: Brand Logo + Services Menu + Search */}
-        <div className="flex items-center gap-3">
+      {/* 1. Pure Black Unified Navigation Bar */}
+      <header className="h-12 bg-black border-b border-neutral-800 px-3 sm:px-4 flex items-center justify-between text-xs select-none sticky top-0 z-50">
+        {/* Left Side: Brand Logo + Primary View Tabs */}
+        <div className="flex items-center gap-4 sm:gap-6">
           {/* A2A Gateway Logo */}
           <div
             onClick={() => {
@@ -253,164 +238,109 @@ export function App() {
             </div>
           </div>
 
-          {/* Quick Services Menu */}
-          <div className="relative">
+          {/* Primary View Tabs */}
+          <nav className="flex items-center gap-1">
             <button
-              onClick={() => setShowServicesMenu(!showServicesMenu)}
-              className={`p-1.5 transition-colors flex items-center justify-center border border-transparent ${
-                showServicesMenu ? 'bg-neutral-900 text-white border-neutral-800' : 'text-slate-400 hover:text-white hover:bg-neutral-900'
+              onClick={() => {
+                setSelectedTaskId(null);
+                setActiveTab('home');
+              }}
+              className={`px-2.5 py-1 text-xs font-medium transition-colors border ${
+                activeTab === 'home' && !selectedTaskId
+                  ? 'bg-neutral-900 text-white border-neutral-700'
+                  : 'text-slate-400 hover:text-white border-transparent'
               }`}
-              title="Gateway Services & Routes"
             >
-              <LayoutGrid size={14} />
+              Console Home
             </button>
+            <button
+              onClick={() => {
+                setSelectedTaskId(null);
+                setActiveTab('tasks');
+              }}
+              className={`px-2.5 py-1 text-xs font-medium transition-colors border flex items-center gap-1.5 ${
+                activeTab === 'tasks' && !selectedTaskId
+                  ? 'bg-neutral-900 text-white border-neutral-700'
+                  : 'text-slate-400 hover:text-white border-transparent'
+              }`}
+            >
+              <span>Tasks</span>
+              <span className="text-[10px] px-1 py-0.2 bg-neutral-900 border border-neutral-800 rounded font-mono text-slate-300">
+                {tasks.length}
+              </span>
+            </button>
+            <button
+              onClick={() => {
+                setSelectedTaskId(null);
+                setActiveTab('agents');
+              }}
+              className={`px-2.5 py-1 text-xs font-medium transition-colors border flex items-center gap-1.5 ${
+                activeTab === 'agents'
+                  ? 'bg-neutral-900 text-white border-neutral-700'
+                  : 'text-slate-400 hover:text-white border-transparent'
+              }`}
+            >
+              <span>Agents</span>
+              <span className="text-[10px] px-1 py-0.2 bg-neutral-900 border border-neutral-800 rounded font-mono text-slate-300">
+                {agents.length}
+              </span>
+            </button>
+            <button
+              onClick={() => {
+                setSelectedTaskId(null);
+                setActiveTab('gateway');
+              }}
+              className={`px-2.5 py-1 text-xs font-medium transition-colors border flex items-center gap-1.5 ${
+                activeTab === 'gateway'
+                  ? 'bg-neutral-900 text-white border-neutral-700'
+                  : 'text-slate-400 hover:text-white border-transparent'
+              }`}
+            >
+              <span>Gateway</span>
+              <span className="text-[10px] px-1 py-0.2 bg-neutral-900 border border-neutral-800 rounded font-mono text-slate-300">
+                {routes.length}
+              </span>
+            </button>
+          </nav>
+        </div>
 
-            {/* Services Dropdown */}
-            {showServicesMenu && (
-              <div className="absolute left-0 mt-2 w-72 bg-black border border-neutral-800 shadow-2xl py-2 z-50">
-                <div className="px-3 py-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-neutral-800">
-                  Gateway Control Plane
-                </div>
-                <div className="py-1">
-                  <button
-                    onClick={() => {
-                      setActiveTab('home');
-                      setSelectedTaskId(null);
-                      setShowServicesMenu(false);
-                    }}
-                    className="w-full px-3 py-2 text-left hover:bg-neutral-900 flex items-center gap-2.5 text-slate-200 border-b border-neutral-900"
-                  >
-                    <div className="w-5 h-5 bg-neutral-900 border border-neutral-700 flex items-center justify-center text-white text-[10px]">
-                      H
-                    </div>
-                    <div>
-                      <div className="font-semibold text-xs text-white">Console Home</div>
-                      <div className="text-[11px] text-slate-400">Modular widgets & telemetry overview</div>
-                    </div>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setActiveTab('tasks');
-                      setSelectedTaskId(null);
-                      setShowServicesMenu(false);
-                    }}
-                    className="w-full px-3 py-2 text-left hover:bg-neutral-900 flex items-center gap-2.5 text-slate-200 border-b border-neutral-900"
-                  >
-                    <div className="w-5 h-5 bg-neutral-900 border border-neutral-700 flex items-center justify-center text-cyan-400 text-[10px]">
-                      <Activity size={12} />
-                    </div>
-                    <div>
-                      <div className="font-semibold text-xs text-white">Tasks Triage Stream</div>
-                      <div className="text-[11px] text-slate-400">Streamed task states & priority sorting</div>
-                    </div>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setActiveTab('agents');
-                      setSelectedTaskId(null);
-                      setShowServicesMenu(false);
-                    }}
-                    className="w-full px-3 py-2 text-left hover:bg-neutral-900 flex items-center gap-2.5 text-slate-200 border-b border-neutral-900"
-                  >
-                    <div className="w-5 h-5 bg-neutral-900 border border-neutral-700 flex items-center justify-center text-amber-400 text-[10px]">
-                      <Boxes size={12} />
-                    </div>
-                    <div>
-                      <div className="font-semibold text-xs text-white">Upstream Agent Registry</div>
-                      <div className="text-[11px] text-slate-400">Registered agent cards and endpoints</div>
-                    </div>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setActiveTab('gateway');
-                      setSelectedTaskId(null);
-                      setShowServicesMenu(false);
-                    }}
-                    className="w-full px-3 py-2 text-left hover:bg-neutral-900 flex items-center gap-2.5 text-slate-200"
-                  >
-                    <div className="w-5 h-5 bg-neutral-900 border border-neutral-700 flex items-center justify-center text-emerald-400 text-[10px]">
-                      <Network size={12} />
-                    </div>
-                    <div>
-                      <div className="font-semibold text-xs text-white">Gateway Routes & API Keys</div>
-                      <div className="text-[11px] text-slate-400">Path segments & bcrypt token management</div>
-                    </div>
-                  </button>
-                </div>
-              </div>
-            )}
+        {/* Center / Search Bar */}
+        <div className="relative">
+          <div
+            onClick={() => {
+              setSearchOpen(true);
+              setTimeout(() => searchInputRef.current?.focus(), 50);
+            }}
+            className="flex items-center gap-2 w-48 sm:w-64 md:w-72 h-7 px-2.5 bg-black hover:bg-neutral-900 border border-neutral-800 text-slate-400 cursor-pointer transition-colors"
+          >
+            <Search size={12} className="text-slate-500 shrink-0" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              placeholder="Search tasks, agents, routes..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => setSearchOpen(true)}
+              className="bg-transparent text-xs text-white placeholder-slate-500 focus:outline-none w-full font-sans"
+            />
+            <span className="text-[10px] font-mono text-slate-400 bg-neutral-900 border border-neutral-800 px-1 py-0.2 shrink-0 hidden md:inline">
+              [Option+S]
+            </span>
           </div>
 
-          {/* Sharp Search Bar with [Option+S] - Real Connected Search */}
-          <div className="relative">
-            <div
-              onClick={() => {
-                setSearchOpen(true);
-                setTimeout(() => searchInputRef.current?.focus(), 50);
-              }}
-              className="flex items-center gap-2 w-48 sm:w-72 md:w-80 h-7 px-2.5 bg-black hover:bg-neutral-900 border border-neutral-800 text-slate-400 cursor-pointer transition-colors"
-            >
-              <Search size={12} className="text-slate-500 shrink-0" />
-              <input
-                ref={searchInputRef}
-                type="text"
-                placeholder="Search tasks, agents, routes..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onFocus={() => setSearchOpen(true)}
-                className="bg-transparent text-xs text-white placeholder-slate-500 focus:outline-none w-full font-sans"
-              />
-              <span className="text-[10px] font-mono text-slate-400 bg-neutral-900 border border-neutral-800 px-1 py-0.2 shrink-0">
-                [Option+S]
-              </span>
-            </div>
-
-            {/* Quick Search Dropdown with Real Matching Results */}
-            {searchOpen && (
-              <div className="absolute left-0 mt-1.5 w-full bg-black border border-neutral-800 shadow-2xl py-2 z-50 max-h-80 overflow-y-auto">
-                {q.length === 0 ? (
-                  <>
-                    <div className="px-3 py-1 text-[11px] text-slate-400 font-bold uppercase tracking-wider">
-                      Quick Navigation
-                    </div>
-                    <div className="py-1">
-                      <div
-                        onClick={() => {
-                          setActiveTab('tasks');
-                          setSelectedTaskId(null);
-                          setSearchOpen(false);
-                        }}
-                        className="px-3 py-1.5 hover:bg-neutral-900 text-xs text-slate-200 cursor-pointer flex items-center justify-between"
-                      >
-                        <span>Tasks Triage Stream</span>
-                        <span className="text-[10px] text-cyan-400">Triage Feed</span>
-                      </div>
-                      <div
-                        onClick={() => {
-                          setActiveTab('agents');
-                          setSelectedTaskId(null);
-                          setSearchOpen(false);
-                        }}
-                        className="px-3 py-1.5 hover:bg-neutral-900 text-xs text-slate-200 cursor-pointer flex items-center justify-between"
-                      >
-                        <span>Registered Upstream Agents</span>
-                        <span className="text-[10px] text-amber-400">Agent Cards</span>
-                      </div>
-                      <div
-                        onClick={() => {
-                          setActiveTab('gateway');
-                          setSelectedTaskId(null);
-                          setSearchOpen(false);
-                        }}
-                        className="px-3 py-1.5 hover:bg-neutral-900 text-xs text-slate-200 cursor-pointer flex items-center justify-between"
-                      >
-                        <span>Gateway Routes & Keys</span>
-                        <span className="text-[10px] text-emerald-400">Control Plane</span>
-                      </div>
-                      {tasks.slice(0, 3).map((t) => (
+          {/* Quick Search Dropdown with Real Matching Results */}
+          {searchOpen && (
+            <div className="absolute right-0 sm:left-0 mt-1.5 w-72 sm:w-80 md:w-full bg-black border border-neutral-800 shadow-2xl py-2 z-50 max-h-80 overflow-y-auto">
+              {q.length === 0 ? (
+                <>
+                  <div className="px-3 py-1 text-[11px] text-slate-400 font-bold uppercase tracking-wider">
+                    Recent Tasks
+                  </div>
+                  <div className="py-1">
+                    {tasks.length === 0 ? (
+                      <div className="px-3 py-2 text-slate-500 text-xs">No tasks recorded yet</div>
+                    ) : (
+                      tasks.slice(0, 4).map((t) => (
                         <div
                           key={t.id}
                           onClick={() => {
@@ -419,13 +349,17 @@ export function App() {
                           }}
                           className="px-3 py-1.5 hover:bg-neutral-900 text-xs text-slate-200 cursor-pointer flex items-center justify-between"
                         >
-                          <span className="font-mono text-[11px] truncate">{t.id}</span>
-                          <span className="text-[10px] text-indigo-400">Open Timeline</span>
+                          <div className="flex items-center gap-2 overflow-hidden">
+                            <StateChip state={t.current_state} />
+                            <span className="font-mono text-[11px] truncate">{t.id}</span>
+                          </div>
+                          <span className="text-[10px] text-indigo-400 shrink-0">Open Timeline ↗</span>
                         </div>
-                      ))}
-                    </div>
-                  </>
-                ) : hasSearchResults ? (
+                      ))
+                    )}
+                  </div>
+                </>
+              ) : hasSearchResults ? (
                   <div className="space-y-2 py-1">
                     {/* Matching Tasks */}
                     {filteredTasks.length > 0 && (
@@ -506,7 +440,6 @@ export function App() {
               </div>
             )}
           </div>
-        </div>
 
         {/* Right Side: Gateway CLI, Bell, Live Node Status, Account */}
         <div className="flex items-center gap-1.5 sm:gap-2">
@@ -733,172 +666,7 @@ export function App() {
         </div>
       </header>
 
-      {/* 2. Subnav Bar & Breadcrumbs */}
-      <div className="h-8 bg-black border-b border-neutral-800/80 px-3 flex items-center justify-between text-xs select-none">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="text-slate-400 hover:text-white p-1 hover:bg-neutral-900 transition-colors"
-            title="Toggle Sidebar Navigation"
-          >
-            <Menu size={13} />
-          </button>
-
-          {/* Breadcrumb Path */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
-                setSelectedTaskId(null);
-                setActiveTab('home');
-              }}
-              className="font-bold text-white hover:text-slate-300 transition-colors text-[11px]"
-            >
-              A2A Gateway
-            </button>
-            <span className="text-neutral-700">/</span>
-            <span className="text-slate-400 capitalize text-[11px]">
-              {selectedTaskId ? `Task ${selectedTaskId.slice(0, 8)}...` : activeTab === 'home' ? 'Console Home' : activeTab}
-            </span>
-          </div>
-        </div>
-
-        {/* View Switcher Tabs */}
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => {
-              setSelectedTaskId(null);
-              setActiveTab('home');
-            }}
-            className={`px-2.5 py-0.5 text-[11px] font-medium transition-colors border ${
-              activeTab === 'home' && !selectedTaskId
-                ? 'bg-neutral-900 text-white border-neutral-700'
-                : 'text-slate-400 hover:text-white border-transparent'
-            }`}
-          >
-            Console Home
-          </button>
-          <button
-            onClick={() => {
-              setSelectedTaskId(null);
-              setActiveTab('tasks');
-            }}
-            className={`px-2.5 py-0.5 text-[11px] font-medium transition-colors border ${
-              activeTab === 'tasks' && !selectedTaskId
-                ? 'bg-neutral-900 text-white border-neutral-700'
-                : 'text-slate-400 hover:text-white border-transparent'
-            }`}
-          >
-            Tasks ({tasks.length})
-          </button>
-          <button
-            onClick={() => {
-              setSelectedTaskId(null);
-              setActiveTab('agents');
-            }}
-            className={`px-2.5 py-0.5 text-[11px] font-medium transition-colors border ${
-              activeTab === 'agents'
-                ? 'bg-neutral-900 text-white border-neutral-700'
-                : 'text-slate-400 hover:text-white border-transparent'
-            }`}
-          >
-            Agents ({agents.length})
-          </button>
-          <button
-            onClick={() => {
-              setSelectedTaskId(null);
-              setActiveTab('gateway');
-            }}
-            className={`px-2.5 py-0.5 text-[11px] font-medium transition-colors border ${
-              activeTab === 'gateway'
-                ? 'bg-neutral-900 text-white border-neutral-700'
-                : 'text-slate-400 hover:text-white border-transparent'
-            }`}
-          >
-            Gateway ({routes.length})
-          </button>
-        </div>
-      </div>
-
-      {/* 3. Collapsible Navigation Drawer */}
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-40 flex">
-          <div className="w-64 bg-black border-r border-neutral-800 p-4 flex flex-col justify-between shadow-2xl">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between pb-2.5 border-b border-neutral-800">
-                <span className="font-bold text-xs uppercase text-white">Gateway Navigation</span>
-                <button onClick={() => setSidebarOpen(false)} className="text-slate-500 hover:text-white">
-                  <X size={14} />
-                </button>
-              </div>
-
-              <div className="space-y-1 text-xs">
-                <button
-                  onClick={() => {
-                    setActiveTab('home');
-                    setSelectedTaskId(null);
-                    setSidebarOpen(false);
-                  }}
-                  className={`w-full px-3 py-2 text-left transition-colors flex items-center gap-2 border font-medium ${
-                    activeTab === 'home' && !selectedTaskId ? 'bg-neutral-900 text-white border-neutral-700' : 'text-slate-400 hover:bg-neutral-900 border-transparent'
-                  }`}
-                >
-                  <LayoutGrid size={13} />
-                  <span>Console Home</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setActiveTab('tasks');
-                    setSelectedTaskId(null);
-                    setSidebarOpen(false);
-                  }}
-                  className={`w-full px-3 py-2 text-left transition-colors flex items-center gap-2 border font-medium ${
-                    activeTab === 'tasks' && !selectedTaskId ? 'bg-neutral-900 text-white border-neutral-700' : 'text-slate-400 hover:bg-neutral-900 border-transparent'
-                  }`}
-                >
-                  <Activity size={13} />
-                  <span>Tasks Triage Stream</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setActiveTab('agents');
-                    setSelectedTaskId(null);
-                    setSidebarOpen(false);
-                  }}
-                  className={`w-full px-3 py-2 text-left transition-colors flex items-center gap-2 border font-medium ${
-                    activeTab === 'agents' ? 'bg-neutral-900 text-white border-neutral-700' : 'text-slate-400 hover:bg-neutral-900 border-transparent'
-                  }`}
-                >
-                  <Boxes size={13} />
-                  <span>Registered Agents ({agents.length})</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setActiveTab('gateway');
-                    setSelectedTaskId(null);
-                    setSidebarOpen(false);
-                  }}
-                  className={`w-full px-3 py-2 text-left transition-colors flex items-center gap-2 border font-medium ${
-                    activeTab === 'gateway' ? 'bg-neutral-900 text-white border-neutral-700' : 'text-slate-400 hover:bg-neutral-900 border-transparent'
-                  }`}
-                >
-                  <Network size={13} />
-                  <span>Routes & API Keys ({routes.length})</span>
-                </button>
-              </div>
-            </div>
-
-            <div className="pt-3 border-t border-neutral-800 text-[11px] text-slate-500">
-              A2A Gateway Console • Sharp Black Edition
-            </div>
-          </div>
-          <div className="flex-1 bg-black/80" onClick={() => setSidebarOpen(false)} />
-        </div>
-      )}
-
-      {/* 4. Main Body Content */}
+      {/* 2. Main Body Content */}
       <main className="max-w-[1500px] mx-auto w-full px-4 sm:px-6 py-4 flex-1">
         {selectedTaskId ? (
           <TimelinePage
