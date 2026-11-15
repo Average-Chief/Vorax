@@ -49,7 +49,7 @@ export function StateChip({ state, className = '' }: StateChipProps) {
 
   return (
     <span
-      className={`inline-flex items-center px-2 py-0.5 text-[11px] font-mono tracking-tight uppercase border ${colorClasses} ${
+      className={`inline-flex items-center shrink-0 whitespace-nowrap px-2 py-0.5 text-[11px] font-mono tracking-tight uppercase border ${colorClasses} ${
         isPulsing ? 'animate-pulse' : ''
       } ${className}`}
     >

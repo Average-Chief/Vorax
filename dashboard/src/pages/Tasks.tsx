@@ -123,12 +123,12 @@ export function TasksPage({ onSelectTask }: TasksPageProps) {
       <div
         key={task.id}
         onClick={() => onSelectTask(task.id)}
-        className={`p-3 border rounded transition-all cursor-pointer space-y-2 group ${cardBorder}`}
+        className={`p-3 border rounded transition-colors duration-150 cursor-pointer space-y-2 group ${cardBorder}`}
       >
         {/* Row 1: StateChip + Task ID + Copy + Time */}
         <div className="flex items-center justify-between gap-1.5">
           <div className="flex items-center gap-1.5 overflow-hidden">
-            <StateChip state={task.current_state} />
+            <StateChip state={task.current_state} className="shrink-0" />
             <span
               className="font-mono text-xs font-semibold text-white group-hover:text-orange-400 transition-colors truncate"
               title={task.id}
@@ -152,10 +152,12 @@ export function TasksPage({ onSelectTask }: TasksPageProps) {
           </span>
         </div>
 
-        {/* Row 2: Error summary or message preview */}
-        <p className="text-xs text-slate-300 line-clamp-2 leading-relaxed font-sans" title={preview}>
-          {preview}
-        </p>
+        {/* Row 2: Error summary or message preview with stable fixed height */}
+        <div className="h-9 overflow-hidden">
+          <p className="text-xs text-slate-300 line-clamp-2 leading-snug font-sans" title={preview}>
+            {preview}
+          </p>
+        </div>
 
         {/* Row 3: Duration & Open Timeline Action */}
         <div className="flex items-center justify-between pt-1.5 border-t border-neutral-900/80 text-[10px] text-slate-500">
@@ -163,7 +165,7 @@ export function TasksPage({ onSelectTask }: TasksPageProps) {
             <Clock size={10} />
             <span>{formatDuration(task.started_at, task.last_event_at)}</span>
           </div>
-          <span className="text-blue-400 group-hover:text-orange-400 group-hover:translate-x-0.5 transition-all flex items-center gap-0.5 font-medium">
+          <span className="text-blue-400 group-hover:text-orange-400 transition-colors duration-150 flex items-center gap-0.5 font-medium">
             <span>Timeline</span>
             <ArrowUpRight size={10} />
           </span>
