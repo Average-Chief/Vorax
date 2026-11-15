@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  Search,
   Bell,
   Settings,
   Terminal,
@@ -68,10 +67,8 @@ export function App() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showEnvMenu, setShowEnvMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchOpen, setSearchOpen] = useState(false);
 
-  // Real connected data for global search & status
+  // Real connected data for global status
   const [agents, setAgents] = useState<AgentListItem[]>([]);
   const [routes, setRoutes] = useState<GatewayRoute[]>([]);
   const [copiedSnippet, setCopiedSnippet] = useState<string | null>(null);
@@ -80,7 +77,6 @@ export function App() {
 
   const { status: wsStatus } = useWs();
   const { tasks, loading } = useLiveTasks();
-  const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     Promise.all([fetchAgents(), fetchRoutes()])
@@ -91,15 +87,10 @@ export function App() {
       .catch(() => {});
   }, []);
 
-  // Shortcut for Option+S or Cmd+K
+  // Escape key closes menus
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.altKey && (e.key === 's' || e.key === 'S')) || ((e.metaKey || e.ctrlKey) && e.key === 'k')) {
-        e.preventDefault();
-        setSearchOpen(true);
-        setTimeout(() => searchInputRef.current?.focus(), 50);
-      } else if (e.key === 'Escape') {
-        setSearchOpen(false);
+      if (e.key === 'Escape') {
         setShowNotifications(false);
         setShowEnvMenu(false);
         setShowUserMenu(false);
@@ -180,29 +171,6 @@ export function App() {
       markAllNotificationsAsRead();
     }
   };
-
-  // Search filtering across real tasks, agents, and routes
-  const q = searchQuery.trim().toLowerCase();
-  const filteredTasks = q
-    ? tasks.filter(
-        (t) =>
-          t.id.toLowerCase().includes(q) ||
-          (t.current_state || '').toLowerCase().includes(q) ||
-          (t.error_summary || '').toLowerCase().includes(q)
-      ).slice(0, 5)
-    : [];
-  const filteredAgents = q
-    ? agents.filter(
-        (a) =>
-          a.name.toLowerCase().includes(q) ||
-          a.endpoint_url.toLowerCase().includes(q)
-      ).slice(0, 3)
-    : [];
-  const filteredRoutes = q
-    ? routes.filter((r) => r.path_segment.toLowerCase().includes(q)).slice(0, 3)
-    : [];
-
-  const hasSearchResults = q.length > 0 && (filteredTasks.length > 0 || filteredAgents.length > 0 || filteredRoutes.length > 0);
 
   if (!isAuthed) {
     return (
@@ -303,143 +271,6 @@ export function App() {
             </button>
           </nav>
         </div>
-
-        {/* Center / Search Bar */}
-        <div className="relative">
-          <div
-            onClick={() => {
-              setSearchOpen(true);
-              setTimeout(() => searchInputRef.current?.focus(), 50);
-            }}
-            className="flex items-center gap-2 w-48 sm:w-64 md:w-72 h-7 px-2.5 bg-black hover:bg-neutral-900 border border-neutral-800 text-slate-400 cursor-pointer transition-colors"
-          >
-            <Search size={12} className="text-slate-500 shrink-0" />
-            <input
-              ref={searchInputRef}
-              type="text"
-              placeholder="Search tasks, agents, routes..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => setSearchOpen(true)}
-              className="bg-transparent text-xs text-white placeholder-slate-500 focus:outline-none w-full font-sans"
-            />
-            <span className="text-[10px] font-mono text-slate-400 bg-neutral-900 border border-neutral-800 px-1 py-0.2 shrink-0 hidden md:inline">
-              [Option+S]
-            </span>
-          </div>
-
-          {/* Quick Search Dropdown with Real Matching Results */}
-          {searchOpen && (
-            <div className="absolute right-0 sm:left-0 mt-1.5 w-72 sm:w-80 md:w-full bg-black border border-neutral-800 shadow-2xl py-2 z-50 max-h-80 overflow-y-auto">
-              {q.length === 0 ? (
-                <>
-                  <div className="px-3 py-1 text-[11px] text-slate-400 font-bold uppercase tracking-wider">
-                    Recent Tasks
-                  </div>
-                  <div className="py-1">
-                    {tasks.length === 0 ? (
-                      <div className="px-3 py-2 text-slate-500 text-xs">No tasks recorded yet</div>
-                    ) : (
-                      tasks.slice(0, 4).map((t) => (
-                        <div
-                          key={t.id}
-                          onClick={() => {
-                            setSelectedTaskId(t.id);
-                            setSearchOpen(false);
-                          }}
-                          className="px-3 py-1.5 hover:bg-neutral-900 text-xs text-slate-200 cursor-pointer flex items-center justify-between"
-                        >
-                          <div className="flex items-center gap-2 overflow-hidden">
-                            <StateChip state={t.current_state} />
-                            <span className="font-mono text-[11px] truncate">{t.id}</span>
-                          </div>
-                          <span className="text-[10px] text-indigo-400 shrink-0">Open Timeline ↗</span>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </>
-              ) : hasSearchResults ? (
-                  <div className="space-y-2 py-1">
-                    {/* Matching Tasks */}
-                    {filteredTasks.length > 0 && (
-                      <div>
-                        <div className="px-3 py-1 text-[10px] text-slate-500 font-mono uppercase font-bold">
-                          Matching Tasks ({filteredTasks.length})
-                        </div>
-                        {filteredTasks.map((t) => (
-                          <div
-                            key={t.id}
-                            onClick={() => {
-                              setSelectedTaskId(t.id);
-                              setSearchOpen(false);
-                            }}
-                            className="px-3 py-1.5 hover:bg-neutral-900 text-xs cursor-pointer flex items-center justify-between"
-                          >
-                            <div className="flex items-center gap-2 overflow-hidden">
-                              <StateChip state={t.current_state} />
-                              <span className="font-mono text-[11px] text-slate-200 truncate">{t.id}</span>
-                            </div>
-                            <span className="text-[10px] text-indigo-400 shrink-0">Open Timeline ↗</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Matching Agents */}
-                    {filteredAgents.length > 0 && (
-                      <div className="border-t border-neutral-900 pt-1">
-                        <div className="px-3 py-1 text-[10px] text-slate-500 font-mono uppercase font-bold">
-                          Matching Agents ({filteredAgents.length})
-                        </div>
-                        {filteredAgents.map((a) => (
-                          <div
-                            key={a.id}
-                            onClick={() => {
-                              setActiveTab('agents');
-                              setSelectedTaskId(null);
-                              setSearchOpen(false);
-                            }}
-                            className="px-3 py-1.5 hover:bg-neutral-900 text-xs cursor-pointer flex items-center justify-between"
-                          >
-                            <span className="text-slate-200 font-medium">{a.name}</span>
-                            <span className="font-mono text-[10px] text-slate-500">{a.endpoint_url}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Matching Routes */}
-                    {filteredRoutes.length > 0 && (
-                      <div className="border-t border-neutral-900 pt-1">
-                        <div className="px-3 py-1 text-[10px] text-slate-500 font-mono uppercase font-bold">
-                          Matching Routes ({filteredRoutes.length})
-                        </div>
-                        {filteredRoutes.map((r) => (
-                          <div
-                            key={r.id}
-                            onClick={() => {
-                              setActiveTab('gateway');
-                              setSelectedTaskId(null);
-                              setSearchOpen(false);
-                            }}
-                            className="px-3 py-1.5 hover:bg-neutral-900 text-xs cursor-pointer flex items-center justify-between"
-                          >
-                            <span className="font-mono text-emerald-400">/gw/{r.path_segment}</span>
-                            <span className="text-[10px] text-slate-400">{r.agent_name || 'Route'}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="py-4 text-center text-xs text-slate-500 font-mono">
-                    No tasks, agents, or routes matching "{searchQuery}"
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
 
         {/* Right Side: Gateway CLI, Bell, Live Node Status, Account */}
         <div className="flex items-center gap-1.5 sm:gap-2">
