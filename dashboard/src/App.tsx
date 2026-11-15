@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Bell,
   Settings,
@@ -68,6 +68,10 @@ export function App() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showEnvMenu, setShowEnvMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+
+  const notificationsRef = useRef<HTMLDivElement>(null);
+  const envMenuRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   // Real connected data for global status
   const [agents, setAgents] = useState<AgentListItem[]>([]);
@@ -169,9 +173,59 @@ export function App() {
     const nextState = !showNotifications;
     setShowNotifications(nextState);
     if (nextState) {
+      setShowEnvMenu(false);
+      setShowUserMenu(false);
       markAllNotificationsAsRead();
     }
   };
+
+  const toggleEnvMenu = () => {
+    const nextState = !showEnvMenu;
+    setShowEnvMenu(nextState);
+    if (nextState) {
+      setShowNotifications(false);
+      setShowUserMenu(false);
+    }
+  };
+
+  const toggleUserMenu = () => {
+    const nextState = !showUserMenu;
+    setShowUserMenu(nextState);
+    if (nextState) {
+      setShowNotifications(false);
+      setShowEnvMenu(false);
+    }
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (showNotifications && notificationsRef.current && !notificationsRef.current.contains(target)) {
+        setShowNotifications(false);
+      }
+      if (showEnvMenu && envMenuRef.current && !envMenuRef.current.contains(target)) {
+        setShowEnvMenu(false);
+      }
+      if (showUserMenu && userMenuRef.current && !userMenuRef.current.contains(target)) {
+        setShowUserMenu(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setShowNotifications(false);
+        setShowEnvMenu(false);
+        setShowUserMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showNotifications, showEnvMenu, showUserMenu]);
 
   if (!isAuthed) {
     return (
@@ -283,7 +337,7 @@ export function App() {
           </button>
 
           {/* Notifications Bell */}
-          <div className="relative">
+          <div className="relative" ref={notificationsRef}>
             <button
               onClick={toggleNotifications}
               className="p-1.5 text-slate-400 hover:text-white hover:bg-neutral-900 border border-transparent hover:border-neutral-800 transition-colors relative"
@@ -386,9 +440,9 @@ export function App() {
           </button>
 
           {/* Real Gateway Node Status Pill (Replaces Dummy Envs) */}
-          <div className="relative">
+          <div className="relative" ref={envMenuRef}>
             <button
-              onClick={() => setShowEnvMenu(!showEnvMenu)}
+              onClick={toggleEnvMenu}
               className="flex items-center gap-1.5 px-2 py-1 hover:bg-neutral-900 border border-transparent hover:border-neutral-800 text-slate-300 hover:text-white transition-colors"
               title="Gateway Node Info"
             >
@@ -441,9 +495,9 @@ export function App() {
           </div>
 
           {/* Identity & Admin Dropdown */}
-          <div className="relative">
+          <div className="relative" ref={userMenuRef}>
             <button
-              onClick={() => setShowUserMenu(!showUserMenu)}
+              onClick={toggleUserMenu}
               className="flex items-center gap-1.5 px-2 py-1 hover:bg-neutral-900 border border-transparent hover:border-neutral-800 text-slate-300 hover:text-white transition-colors"
             >
               <span className="w-1.5 h-1.5 bg-emerald-400" title="Live Redis WS Connected" />
