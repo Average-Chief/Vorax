@@ -129,6 +129,14 @@ export function TasksPage({ onSelectTask }: TasksPageProps) {
         <div className="flex items-center justify-between gap-1.5">
           <div className="flex items-center gap-1.5 overflow-hidden">
             <StateChip state={task.current_state} className="shrink-0" />
+            {task.is_incomplete && (
+              <span
+                className="shrink-0 text-[10px] bg-amber-950/80 text-amber-300 border border-amber-600/50 px-1 py-0.2 rounded font-mono font-medium"
+                title={task.incompleteness_reason || 'Timeline Incomplete'}
+              >
+                Incomplete
+              </span>
+            )}
             <span
               className="font-mono text-xs font-semibold text-white group-hover:text-orange-400 transition-colors truncate"
               title={task.id}

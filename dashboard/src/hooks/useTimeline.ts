@@ -8,6 +8,8 @@ export function useTimeline(taskId: string) {
   const [events, setEvents] = useState<TaskEventDetail[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isIncomplete, setIsIncomplete] = useState<boolean>(false);
+  const [incompletenessReason, setIncompletenessReason] = useState<string | null>(null);
 
   const seenSeqSet = useRef<Set<number>>(new Set());
 
@@ -18,6 +20,8 @@ export function useTimeline(taskId: string) {
       const data = await fetchTaskTimeline(taskId);
       setTask(data.task);
       setEvents(data.events);
+      setIsIncomplete(Boolean(data.is_incomplete || data.task?.is_incomplete));
+      setIncompletenessReason(data.incompleteness_reason || data.task?.incompleteness_reason || null);
       seenSeqSet.current = new Set(data.events.map((e) => e.seq));
     } catch (err: any) {
       setError(err.message || 'Failed to load timeline');
@@ -98,6 +102,6 @@ export function useTimeline(taskId: string) {
     };
   }, [taskId, loadTimeline]);
 
-  return { task, events, loading, error, refresh: loadTimeline };
+  return { task, events, loading, error, refresh: loadTimeline, isIncomplete, incompletenessReason };
 }
 

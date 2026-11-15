@@ -11,7 +11,7 @@ interface TimelinePageProps {
 }
 
 export function TimelinePage({ taskId, onBack }: TimelinePageProps) {
-  const { task, events, loading, error, refresh } = useTimeline(taskId);
+  const { task, events, loading, error, refresh, isIncomplete, incompletenessReason } = useTimeline(taskId);
   const [copied, setCopied] = useState(false);
   const [expandedMessages, setExpandedMessages] = useState<Record<number, boolean>>({});
 
@@ -169,6 +169,23 @@ export function TimelinePage({ taskId, onBack }: TimelinePageProps) {
                 Jump to event #{gatewayNoteEvent.seq}
               </button>
             )}
+          </div>
+        )}
+
+        {/* Timeline Incompleteness Indicator */}
+        {isIncomplete && !gatewayNoteMessage && (
+          <div className="p-3 bg-amber-950/40 border border-amber-500/60 text-amber-200 flex items-start justify-between text-xs animate-in fade-in">
+            <div className="flex items-start space-x-2">
+              <AlertTriangle size={16} className="text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-semibold text-amber-100 uppercase tracking-wide mr-1.5 text-[10px] bg-amber-900/60 border border-amber-700/60 px-1 py-0.5">
+                  timeline incomplete
+                </span>
+                <span className="font-medium text-amber-200">
+                  {incompletenessReason || 'Some events were lost under backpressure or socket drop.'}
+                </span>
+              </div>
+            </div>
           </div>
         )}
       </div>

@@ -33,6 +33,7 @@ services:
       DATABASE_URL: postgresql+asyncpg://a2a:a2a@postgres:5432/a2a
       REDIS_URL: redis://redis:6379/0
       ADMIN_KEY: dev-only-do-not-use-in-prod
+      ALLOW_INSECURE_DEV_KEY: "true"
       LOG_LEVEL: info
     ports:
       - "8000:8000"

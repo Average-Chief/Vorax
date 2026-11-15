@@ -23,6 +23,8 @@ class TaskSummary(BaseModel):
     started_at: Optional[datetime] = None
     last_event_at: Optional[datetime] = None
     error_summary: Optional[str] = None
+    is_incomplete: bool = False
+    incompleteness_reason: Optional[str] = None
 
 class EventDetail(BaseModel):
     id: int
@@ -38,6 +40,8 @@ class EventDetail(BaseModel):
 class TaskTimeline(BaseModel):
     task: TaskSummary
     events: list[EventDetail]
+    is_incomplete: bool = False
+    incompleteness_reason: Optional[str] = None
 
 class StatsResponse(BaseModel):
     tasks_by_state: dict[str, int]
@@ -74,19 +78,28 @@ async def list_tasks(
     result = await db.execute(query)
     tasks = result.scalars().all()
 
-    return [
-        TaskSummary(
-            id=t.id,
-            route_id=t.route_id,
-            context_id=t.context_id,
-            current_state=t.current_state,
-            is_terminal=t.is_terminal,
-            started_at=t.started_at,
-            last_event_at=t.last_event_at,
-            error_summary=t.error_summary,
+    tasks_res = []
+    for t in tasks:
+        is_inc = False
+        inc_reason = None
+        if t.error_summary and any(kw in t.error_summary.lower() for kw in ("reset", "lost", "dropped", "disconnect", "abnormal")):
+            is_inc = True
+            inc_reason = t.error_summary
+        tasks_res.append(
+            TaskSummary(
+                id=t.id,
+                route_id=t.route_id,
+                context_id=t.context_id,
+                current_state=t.current_state,
+                is_terminal=t.is_terminal,
+                started_at=t.started_at,
+                last_event_at=t.last_event_at,
+                error_summary=t.error_summary,
+                is_incomplete=is_inc,
+                incompleteness_reason=inc_reason,
+            )
         )
-        for t in tasks
-    ]
+    return tasks_res
 
 @router.get("/tasks/{task_id}/timeline", response_model=TaskTimeline)
 async def get_task_timeline(
@@ -103,6 +116,33 @@ async def get_task_timeline(
     stmt_events = select(TaskEvent).where(TaskEvent.task_id == task_id).order_by(TaskEvent.seq.asc())
     events = (await db.execute(stmt_events)).scalars().all()
 
+    # Check for timeline incompleteness:
+    # 1. First event sequence > 1 (earlier events dropped under backpressure)
+    # 2. Sequence gap between consecutive events
+    # 3. Connection reset or dropped without normal terminal event
+    is_incomplete = False
+    incompleteness_reason = None
+    if events:
+        if events[0].seq > 1:
+            is_incomplete = True
+            incompleteness_reason = f"Timeline begins at sequence #{events[0].seq} (earlier events dropped under queue backpressure)"
+        else:
+            for i in range(1, len(events)):
+                if events[i].seq != events[i-1].seq + 1:
+                    is_incomplete = True
+                    incompleteness_reason = f"Event sequence gap detected between #{events[i-1].seq} and #{events[i].seq} (dropped under queue backpressure)"
+                    break
+
+    if not is_incomplete and events:
+        note_event = next((e for e in events if e.kind == "gateway.note"), None)
+        if note_event:
+            is_incomplete = True
+            incompleteness_reason = (note_event.payload or {}).get("message") or (note_event.payload or {}).get("detail") or "Upstream connection terminated unexpectedly"
+
+    if not is_incomplete and task.current_state in ("failed", "rejected") and not any(e.is_final for e in events):
+        is_incomplete = True
+        incompleteness_reason = task.error_summary or "Task terminated without final terminal status frame"
+
     return TaskTimeline(
         task=TaskSummary(
             id=task.id,
@@ -113,6 +153,8 @@ async def get_task_timeline(
             started_at=task.started_at,
             last_event_at=task.last_event_at,
             error_summary=task.error_summary,
+            is_incomplete=is_incomplete,
+            incompleteness_reason=incompleteness_reason,
         ),
         events=[
             EventDetail(
@@ -128,6 +170,8 @@ async def get_task_timeline(
             )
             for e in events
         ],
+        is_incomplete=is_incomplete,
+        incompleteness_reason=incompleteness_reason,
     )
 
 @router.get("/stats", response_model=StatsResponse)

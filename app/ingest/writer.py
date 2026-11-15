@@ -50,6 +50,15 @@ def enqueue_event(event: TapEvent) -> bool:
         return True
     except asyncio.QueueFull:
         stats["dropped_events"] += 1
+        # Forensic failure notes have priority: evict an older streaming event to guarantee persistence
+        if settings.SYNC_PERSIST_GATEWAY_NOTES and event.kind == "gateway.note":
+            try:
+                _ = q.get_nowait()
+                q.put_nowait(event)
+                logger.warning("Event queue full: evicted older event to persist forensic gateway.note")
+                return True
+            except Exception:
+                pass
         logger.warning("Event queue full (dropped_events=%d). Dropping record.", stats["dropped_events"])
         return False
 

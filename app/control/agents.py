@@ -11,6 +11,7 @@ from app.config import settings
 from app.database import get_db
 from app.models import RegisteredAgent
 from app.proxy.httpx_backend import fetch_upstream_card
+from app.crypto import encrypt_credential
 
 router = APIRouter(prefix="/control/agents", tags=["agents"], dependencies=[Depends(require_control_key)])
 
@@ -69,13 +70,21 @@ async def register_agent(
         name=payload.name,
         endpoint_url=payload.endpoint_url,
         agent_card=card,
-        upstream_credential=payload.upstream_credential,
+        upstream_credential=encrypt_credential(payload.upstream_credential),
         created_at=datetime.now(timezone.utc),
     )
     db.add(agent)
     await db.commit()
     await db.refresh(agent)
-    return agent
+    # Return masked credential in response
+    return AgentDetail(
+        id=agent.id,
+        name=agent.name,
+        endpoint_url=agent.endpoint_url,
+        agent_card=agent.agent_card or {},
+        upstream_credential="••••••••" if payload.upstream_credential else None,
+        created_at=agent.created_at,
+    )
 
 @router.get("", response_model=list[AgentListItem])
 async def list_agents(

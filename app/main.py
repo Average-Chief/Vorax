@@ -30,6 +30,23 @@ logger = logging.getLogger("a2a.gateway")
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("Initializing A2A Gateway...")
+
+    # Enforce non-loopback security check if using default development key
+    if settings.ADMIN_KEY == "dev-only-do-not-use-in-prod":
+        host = os.environ.get("HOST", "0.0.0.0")
+        is_loopback = host in ("127.0.0.1", "localhost", "::1")
+        if not is_loopback and not settings.ALLOW_INSECURE_DEV_KEY:
+            logger.critical(
+                "CRITICAL SECURITY CHECK: Refusing to start on non-loopback interface '%s' with default development "
+                "ADMIN_KEY ('dev-only-do-not-use-in-prod'). Set a secure ADMIN_KEY environment variable, or set "
+                "ALLOW_INSECURE_DEV_KEY=true to acknowledge the risk for local development.",
+                host,
+            )
+            raise RuntimeError(
+                "Refusing to bind on non-loopback interface with default development ADMIN_KEY. "
+                "Set a custom ADMIN_KEY or set ALLOW_INSECURE_DEV_KEY=true."
+            )
+
     # Create tables if not exist (ensures startup even before alembic run in tests)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

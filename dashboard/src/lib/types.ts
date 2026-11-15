@@ -7,6 +7,8 @@ export interface TaskSummary {
   started_at?: string | null;
   last_event_at?: string | null;
   error_summary?: string | null;
+  is_incomplete?: boolean;
+  incompleteness_reason?: string | null;
 }
 
 export interface TaskEventDetail {
@@ -24,6 +26,8 @@ export interface TaskEventDetail {
 export interface TaskTimeline {
   task: TaskSummary;
   events: TaskEventDetail[];
+  is_incomplete?: boolean;
+  incompleteness_reason?: string | null;
 }
 
 export interface AgentListItem {

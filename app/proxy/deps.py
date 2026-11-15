@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.models import GatewayRoute, RegisteredAgent
+from app.crypto import decrypt_credential
 
 @dataclass
 class ResolvedRoute:
@@ -52,7 +53,7 @@ async def resolve_route(path_segment: str, db: AsyncSession) -> Optional[Resolve
         path_segment=route.path_segment,
         agent_id=route.agent.id,
         endpoint_url=route.agent.endpoint_url,
-        upstream_credential=route.agent.upstream_credential,
+        upstream_credential=decrypt_credential(route.agent.upstream_credential),
         agent_card=route.agent.agent_card,
     )
     _route_cache[path_segment] = (now + settings.CARD_CACHE_TTL_S, resolved)
