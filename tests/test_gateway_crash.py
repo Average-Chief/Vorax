@@ -74,3 +74,4 @@ async def test_startup_orphan_sweep_after_crash(client: AsyncClient, admin_heade
         assert crash_note["kind"] == "gateway.note"
         assert crash_note["source"] == "gateway"
         assert "gateway restarted; stream interrupted" in crash_note["payload"]["message"]
+
