@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import require_control_key
 from app.database import get_db
-from app.ingest.writer import stats
+from app.ingest.writer import stats, is_task_tail_dropped
 from app.models import Task, TaskEvent
 
 router = APIRouter(prefix="/control", tags=["tasks"], dependencies=[Depends(require_control_key)])
@@ -82,7 +82,10 @@ async def list_tasks(
     for t in tasks:
         is_inc = False
         inc_reason = None
-        if t.error_summary and any(kw in t.error_summary.lower() for kw in ("reset", "lost", "dropped", "disconnect", "abnormal")):
+        if is_task_tail_dropped(t.id):
+            is_inc = True
+            inc_reason = "Tail events were dropped due to queue backpressure"
+        elif t.error_summary and any(kw in t.error_summary.lower() for kw in ("reset", "lost", "dropped", "disconnect", "abnormal")):
             is_inc = True
             inc_reason = t.error_summary
         tasks_res.append(
@@ -117,12 +120,19 @@ async def get_task_timeline(
     events = (await db.execute(stmt_events)).scalars().all()
 
     # Check for timeline incompleteness:
-    # 1. First event sequence > 1 (earlier events dropped under backpressure)
-    # 2. Sequence gap between consecutive events
-    # 3. Connection reset or dropped without normal terminal event
+    # 1. Tail drop explicitly tracked under queue backpressure
+    # 2. First event sequence > 1 (head drop under backpressure)
+    # 3. Sequence gap between consecutive events (interior drop)
+    # 4. Stream truncation: task marked terminal but last event is non-terminal (tail drop)
+    # 5. Connection reset or dropped without normal terminal event
     is_incomplete = False
     incompleteness_reason = None
-    if events:
+
+    if is_task_tail_dropped(task_id):
+        is_incomplete = True
+        incompleteness_reason = "Tail events were dropped due to queue backpressure"
+
+    if not is_incomplete and events:
         if events[0].seq > 1:
             is_incomplete = True
             incompleteness_reason = f"Timeline begins at sequence #{events[0].seq} (earlier events dropped under queue backpressure)"
@@ -132,6 +142,13 @@ async def get_task_timeline(
                     is_incomplete = True
                     incompleteness_reason = f"Event sequence gap detected between #{events[i-1].seq} and #{events[i].seq} (dropped under queue backpressure)"
                     break
+
+    if not is_incomplete and events:
+        last_e = events[-1]
+        is_last_terminal = (last_e.is_final is True) or (last_e.state in ("completed", "canceled", "failed", "rejected"))
+        if task.is_terminal and not is_last_terminal:
+            is_incomplete = True
+            incompleteness_reason = f"Stream ended abruptly at seq #{last_e.seq} ({last_e.state or 'working'}); final completion event was dropped"
 
     if not is_incomplete and events:
         note_event = next((e for e in events if e.kind == "gateway.note"), None)

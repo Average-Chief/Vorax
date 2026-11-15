@@ -166,7 +166,12 @@ Standard HTTP proxies route bytes, but they are unaware of task lifecycles or st
 | Process failure | Logs a 502; all intermediate event history is lost | Preserves in-flight events and logs synthetic `gateway.note` |
 | Gateway restart | Drops in-flight state | Fully reconstructs timelines from event-sourced DB tables (zero loss on graceful restart) |
 
-Test persistence is the proof point: if an upstream drops mid-stream, the gateway must record forensic evidence that neither the caller nor the callee can record. This architectural guarantee is verified in our automated test suite by `test_timeline_persistence.py::test_reconstruct_after_restart`. When an upstream agent drops a TCP connection midway through a task, restarting the gateway process gracefully produces zero data loss: querying `/control/tasks/{id}/timeline` returns the full chronological sequence of upstream steps plus the synthetic gateway forensic note. Under abrupt process termination (`SIGKILL`), uncommitted write-behind events in the FIFO queue can be lost; our priority commit path ensures synthetic forensic failure notes are written immediately to minimize this window.
+### Persistence & Recovery Semantics
+
+| Scenario | Gateway Behavior | Test Proof Point | Bake-Off Metric |
+|---|---|---|---|
+| **Graceful Restart / Upstream Drop** | Zero data loss. FIFO event queue drains cleanly within shutdown hook; synthetic `gateway.note` records root cause. | Verified by `test_timeline_persistence.py::test_reconstruct_after_restart` | Complete chronological timeline reconstruction; failure provenance |
+| **Abrupt Termination (`SIGKILL`)** | Write-behind trade-off: uncommitted queue events may drop; priority commit path guarantees synthetic forensic notes persist. | Verified by `test_ref_agent_chaos.py` chaos benchmarks | Event loss delta under kill vs. baseline latency overhead |
 
 *(Deferred to v0.2 milestone: head-to-head latency and throughput bake-off against agentgateway and Envoy + ext-proc).*
 
@@ -215,7 +220,7 @@ A2A Gateway uses asynchronous write-behind persistence to minimize latency on th
 - **Upstream failures & priority commit:** When an upstream agent disconnects, resets its connection, or times out, the gateway stops accepting new upstream events and drains previously captured events from the FIFO queue into PostgreSQL. By default (`SYNC_PERSIST_GATEWAY_NOTES=true`), synthetic forensic `gateway.note` events bypass queue head-of-line blocking and commit immediately to PostgreSQL, guaranteeing diagnosis provenance is durable.
 - **Graceful gateway shutdown:** On `SIGTERM`, the gateway stops accepting new inbound work and executes a 5-second drain loop on pending in-memory events before exiting. This ensures zero data loss on standard container updates or rolling restarts.
 - **Abrupt gateway termination (`SIGKILL`):** An ungraceful process crash or power loss can drop events that remain queued in memory awaiting database write-behind.
-- **Queue backpressure & forensic honesty:** The in-memory buffer is bounded (`EVENT_QUEUE_MAXSIZE=10000`). If saturated under extreme write loads, events are dropped with `stats["dropped_events"]` incremented. Rather than dropping silently, **the console highlights dropped events in the gateway stats strip and flags affected tasks with a prominent "Timeline Incomplete" marker**, keeping diagnostic evidence honest under severe load.
+- **Queue backpressure & tail drops:** The in-memory buffer is bounded (`EVENT_QUEUE_MAXSIZE=10000`). If saturated under extreme write loads, events are dropped with `stats["dropped_events"]` incremented. Rather than dropping silently, **both tail drops (the most common backpressure scenario) and interior sequence gaps trigger a visible "Timeline Incomplete" marker on affected tasks**, verified by automated test coverage (`tests/test_timeline_incompleteness.py`).
 - **Redis failure:** Redis is used exclusively for ephemeral dashboard event distribution. Its unavailability does not affect PostgreSQL event durability or upstream proxying.
 - **Database failure (Degraded mode):** Events awaiting persistence cannot be considered durable. When PostgreSQL is unreachable or failing, the gateway prioritizes caller availability by logging write errors and continuing to stream chunks, but timeline history is not persisted (resulting in partial timelines marked as incomplete).
 - **Observation boundary:** The gateway reconstructs what it observed over the wire across the A2A JSON-RPC transport. It cannot reconstruct internal agent reasoning, scratchpads, or unexposed tool executions that were never emitted in protocol frames.
@@ -258,6 +263,7 @@ Designed for teams running hundreds to low-thousands of tasks per minute. Not op
 2. **Standardized Harness:** Run identical test matrices against A2A Gateway, agentgateway, and ContextForge (alongside Envoy with a documented observability setup).
 3. **Failure Isolation:** Test upstream connection termination and hard gateway process crashes (`SIGKILL`) independently.
 4. **Core Evaluation Metrics:**
+   - *Operator Effort (Primary Evaluation Metric):* Time required for an on-call engineer to identify the exact root cause of a failed task from gateway-visible evidence, measured by CLI commands needed, log grep friction across disparate services, and cognitive overhead during 3 AM incident triage.
    - *Upstream Failure Mode:* Verification of forensic reconstruction time (< 2 min), sequence monotonicity, and partial stream retention under network cuts.
    - *Ungraceful Crash Mode (`SIGKILL`):* Empirical measurement of in-flight write-behind retention and verification that priority failure notes (`gateway.note`) remain committed.
 5. **Transparent Reporting:** Publish complete results under `scripts/bench/`, explicitly detailing where asynchronous write-behind trades event durability for hot-path latency compared to synchronous byte proxies.

@@ -29,6 +29,7 @@ redis_client: Optional[aioredis.Redis] = None
 # In-memory maps for monotonic seq and started_at
 _task_seq: dict[str, int] = {}
 _task_started_at: dict[str, datetime] = {}
+_tasks_with_dropped_events: set[str] = set()
 
 def get_event_queue() -> asyncio.Queue[TapEvent]:
     global event_queue
@@ -37,11 +38,15 @@ def get_event_queue() -> asyncio.Queue[TapEvent]:
     return event_queue
 
 def reset_writer_state() -> None:
-    global event_queue, _task_seq, _task_started_at, redis_client
+    global event_queue, _task_seq, _task_started_at, _tasks_with_dropped_events, redis_client
     event_queue = None
     _task_seq.clear()
     _task_started_at.clear()
+    _tasks_with_dropped_events.clear()
     redis_client = None
+
+def is_task_tail_dropped(task_id: str) -> bool:
+    return task_id in _tasks_with_dropped_events
 
 def enqueue_event(event: TapEvent) -> bool:
     q = get_event_queue()
@@ -50,6 +55,8 @@ def enqueue_event(event: TapEvent) -> bool:
         return True
     except asyncio.QueueFull:
         stats["dropped_events"] += 1
+        if event.task_id:
+            _tasks_with_dropped_events.add(event.task_id)
         # Forensic failure notes have priority: evict an older streaming event to guarantee persistence
         if settings.SYNC_PERSIST_GATEWAY_NOTES and event.kind == "gateway.note":
             try:
