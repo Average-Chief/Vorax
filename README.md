@@ -43,6 +43,11 @@ docker compose --profile demo up
 ```
 
 Open http://localhost:8000 in your browser.
+Sign in with the default administrator credentials:
+- **Username:** `admin`
+- **Password:** `admin`
+
+*(On your first login, the console will prompt you to set a custom administrator password).*
 
 *First run after cloning takes 1–3 minutes due to initial Docker image build (compiling Python dependencies and building the React dashboard). Subsequent runs with cached images take ~7 seconds to start and show active tasks.*
 
@@ -77,6 +82,59 @@ To use the gateway with your own upstream agent:
    ```
    Open http://localhost:8000 to watch the live timeline reconstruct in real time.
 
+### How callers connect (Python, TypeScript, or any A2A client)
+
+Because A2A Gateway proxies standard A2A JSON-RPC protocol frames, **no proprietary gateway client or custom SDK is required**. Any standard HTTP client, agent framework, or official `a2a-sdk` can talk to the gateway by simply pointing its base URL to `http://localhost:8000/gw/{route}/`:
+
+#### Python (Official `a2a-sdk` or `httpx`)
+```python
+import httpx
+
+GATEWAY_URL = "http://localhost:8000/gw/my-agent/"
+GATEWAY_KEY = "dev-only-do-not-use-in-prod"
+
+headers = {
+    "Authorization": f"Bearer {GATEWAY_KEY}",
+    "Content-Type": "application/json",
+}
+payload = {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "message/stream",
+    "params": {"message": {"role": "user", "parts": [{"kind": "text", "text": "Hello agent!"}]}},
+}
+
+with httpx.stream("POST", GATEWAY_URL, json=payload, headers=headers, timeout=60.0) as response:
+    for line in response.iter_lines():
+        if line.startswith("data:"):
+            print("Received event:", line[5:].strip())
+```
+
+#### TypeScript / Node.js
+```typescript
+const response = await fetch("http://localhost:8000/gw/my-agent/", {
+  method: "POST",
+  headers: {
+    "Authorization": "Bearer dev-only-do-not-use-in-prod",
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    jsonrpc: "2.0",
+    id: 1,
+    method: "message/stream",
+    params: { message: { role: "user", parts: [{ kind: "text", text: "Hello agent!" }] } },
+  }),
+});
+
+const reader = response.body?.getReader();
+const decoder = new TextDecoder();
+while (reader) {
+  const { done, value } = await reader.read();
+  if (done) break;
+  console.log(decoder.decode(value));
+}
+```
+
 ---
 
 ## What makes this different?
@@ -106,10 +164,12 @@ For comprehensive technical specifications, read [docs/architecture.md](docs/arc
 ## Features
 
 - **Low-Latency Streaming Proxy:** Forwards SSE events incrementally without buffering the complete response. Upstream chunk timing is preserved within minimal frame parsing overhead (automated tests verify median chunk arrival gaps remain within ~500 ms).
-- **Per-Task Event Timeline:** Displays chronological status updates, latency in milliseconds per event, and expandable message text previews.
+- **Per-Task Event Timeline:** Displays chronological status updates, latency in milliseconds per event, expandable message previews, and client-side artifact inspection.
 - **Forensic `gateway.note` Events:** Generates synthetic forensic events when upstream connections reset or reject credentials, allowing diagnosis without accessing remote agent logs.
-- **Dashboard with Triage Order:** Sorts tasks automatically so failures and input-required states appear first, followed by active in-flight tasks and completed tasks.
-- **API Key Management:** Issues hashed bearer keys (bcrypt) with prefix tracking and fast in-memory validation caching.
+- **3-Column Tasks Triage Board:** Organizes tasks side-by-side into *Needs Attention* (failures/rejected/input-required), *In Flight* (active running streams), and *Recent Terminal* (completed/canceled) with independent pagination and page-size selector.
+- **Built-in Console Authentication:** Secure password-gated web console with default `admin`/`admin` credentials and mandatory first-login password rotation.
+- **Zero-SDK Transparent Protocol:** No proprietary client libraries required; compatible with Google's official `a2a-sdk` (v0.3 and v1.0), LangGraph, CrewAI, or raw HTTP/SSE.
+- **API Key Management:** Issues hashed bearer keys (bcrypt) with prefix tracking (`a2a_live_...`) and fast in-memory validation caching.
 - **Agent Card Discovery:** Serves cached agent discovery cards at `/gw/{route}/.well-known/agent-card.json`.
 - **Event-Sourced Persistence:** Stores append-only events in PostgreSQL with an in-memory queue to maintain hot-path throughput.
 

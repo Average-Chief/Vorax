@@ -118,6 +118,14 @@
   - Explicitly named direct A2A competitor **agentgateway**, positioning our per-task forensic event store and triage UI as the differentiator, with head-to-head empirical benchmarking placed on the v0.2 roadmap.
   - Clarified test persistence as proof point and added v0.2 benchmark suite note to Roadmap.
 
+### Milestone 4.2 — Console UX, Authentication & Brand Polish (Completed)
+- **Built-in Console Authentication**: Added username/password sign-in (`admin` / `admin`) with mandatory first-login password rotation stored in browser localStorage (`dashboard/src/pages/Login.tsx`, `dashboard/src/lib/auth.ts`).
+- **3-Column Tasks Triage Board**: Converted the Tasks view into a 3-column side-by-side layout (`Needs Attention`, `In Flight`, and `Recent Terminal`) with independent pagination controls and page-size selector (`dashboard/src/pages/Tasks.tsx`).
+- **Stabilized Live Card Animations**: Removed `transition-all` bounce and card resizing during high-frequency WebSocket updates; locked message preview heights and badge whitespace.
+- **Streamlined Navigation & Notification Dismissal**: Removed redundant UI menus and search bar; notification popover automatically clears badge count on click.
+- **Branded Logo Assets**: Extracted clean transparent logo assets (`logo.png`, `logo.svg`, `favicon.svg`) from vector artwork; wired into navigation header, login card, and browser tab favicon with SPA static fallback routing.
+- **Documentation Updates**: Updated `README.md` with default login credentials, 3-column triage board overview, and Python (`httpx`/`a2a-sdk`) and TypeScript client integration guides.
+
 ---
 
 ## Next Milestone — Competitor Bake-Off
