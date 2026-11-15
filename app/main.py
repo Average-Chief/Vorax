@@ -1,16 +1,16 @@
 import logging
 import uuid
+from datetime import datetime, timezone
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator, Optional
 from fastapi import FastAPI, Request, Query, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import engine, Base, async_session_maker, get_db
 
 from app.config import settings
-from app.database import engine, Base, async_session_maker
-from app.models import ApiKey
+from app.models import ApiKey, Task, TaskEvent
 from app.auth import generate_api_key
 import os
 from fastapi.staticfiles import StaticFiles
@@ -70,6 +70,41 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             logger.info("A2A Gateway Bootstrap Admin Key: %s", raw_key)
             logger.info("Use this key with 'Authorization: Bearer <key>' to access control plane.")
             logger.info("============================================================")
+
+    # Startup sweep: mark orphaned non-terminal tasks from previous crash/abrupt restart
+    async with async_session_maker() as session:
+        async with session.begin():
+            stmt = select(Task).where(Task.is_terminal == False)
+            orphaned = (await session.execute(stmt)).scalars().all()
+            if orphaned:
+                now = datetime.now(timezone.utc)
+                logger.warning(
+                    "Startup orphan sweep: Found %d in-flight tasks from previous crash; marking as failed with synthetic gateway.note",
+                    len(orphaned),
+                )
+                for ot in orphaned:
+                    ot.current_state = "failed"
+                    ot.is_terminal = True
+                    ot.error_summary = "gateway restarted; stream interrupted, events after this point may be lost"
+                    ot.last_event_at = now
+
+                    seq_stmt = select(func.max(TaskEvent.seq)).where(TaskEvent.task_id == ot.id)
+                    max_seq = (await session.execute(seq_stmt)).scalar() or 0
+
+                    note = TaskEvent(
+                        task_id=ot.id,
+                        seq=max_seq + 1,
+                        source="gateway",
+                        kind="gateway.note",
+                        state="failed",
+                        is_final=True,
+                        payload={
+                            "error_type": "GatewayCrashOrRestart",
+                            "message": "gateway restarted; stream interrupted, events after this point may be lost",
+                        },
+                        observed_at=now,
+                    )
+                    session.add(note)
 
     # Start ingest writer task
     writer_task = start_writer_task()

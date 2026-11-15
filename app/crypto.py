@@ -24,8 +24,9 @@ def _get_fernet() -> Fernet:
         except Exception as e:
             logger.warning("Invalid CREDENTIAL_ENCRYPTION_KEY provided; falling back to derived key: %s", e)
 
-    # Derive deterministic Fernet key using SHA-256 of ADMIN_KEY + static salt
-    seed = (settings.ADMIN_KEY or "a2a-gateway-default-seed").encode("utf-8") + b":credential-encryption-salt"
+    # Derive deterministic Fernet key using SHA-256 of SECRET_KEY + static salt
+    # Decoupled from ADMIN_KEY so admin key rotation does not orphan stored credentials
+    seed = (settings.SECRET_KEY or "a2a-gateway-default-secret-key-change-me").encode("utf-8") + b":credential-encryption-salt"
     derived_key = base64.urlsafe_b64encode(hashlib.sha256(seed).digest())
     _fernet_instance = Fernet(derived_key)
     return _fernet_instance

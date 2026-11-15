@@ -12,7 +12,7 @@
   <a href="#features"><strong>Features</strong></a> •
   <a href="#what-makes-this-different"><strong>Why It's Different</strong></a> •
   <a href="#durability-and-failure-semantics"><strong>Durability Semantics</strong></a> •
-  <a href="#security-boundaries--guarantees"><strong>Security Guarantees</strong></a>
+  <a href="#security-boundaries--threat-model"><strong>Security Boundaries</strong></a>
 </p>
 
 A2A Gateway is a self-hosted control plane and reverse proxy engineered for Agent-to-Agent (A2A) JSON-RPC protocol communication. Callers send tasks to a single endpoint using one gateway API key, and the gateway proxies requests directly to upstream agents without buffering streaming chunks. Every status transition, streaming SSE event, artifact, and connection failure is recorded and displayed on an integrated live dashboard.
@@ -62,7 +62,7 @@ Sign in with the default administrator credentials:
 
 *(On your first login, the console will prompt you to set a custom administrator password).*
 
-*First run after cloning compiles the Docker image locally (~1–3 minutes). Subsequent runs with cached images (or pulling prebuilt `ghcr.io/a2a-gateway/api:latest`) take ~7 seconds to start and show active tasks.*
+*First run after cloning builds the Docker image locally (~1–3 minutes). Subsequent runs with cached images take ~7 seconds to start and show active tasks.*
 
 The demo profile automatically spins up PostgreSQL, Redis, the gateway API, three demo agents (echo, research, flaky), and a background traffic generator.
 
@@ -170,8 +170,8 @@ Standard HTTP proxies route bytes, but they are unaware of task lifecycles or st
 
 | Scenario | Gateway Behavior | Test Proof Point | Bake-Off Metric |
 |---|---|---|---|
-| **Graceful Restart / Upstream Drop** | Zero data loss. FIFO event queue drains cleanly within shutdown hook; synthetic `gateway.note` records root cause. | Verified by `test_timeline_persistence.py::test_reconstruct_after_restart` | Complete chronological timeline reconstruction; failure provenance |
-| **Abrupt Termination (`SIGKILL`)** | Write-behind trade-off: uncommitted queue events may drop; priority commit path guarantees synthetic forensic notes persist. | Verified by `test_ref_agent_chaos.py` chaos benchmarks | Event loss delta under kill vs. baseline latency overhead |
+| **Graceful Restart / Upstream Drop** | Zero data loss if drain completes. FIFO event queue drains cleanly within shutdown hook; synthetic `gateway.note` records root cause. | Verified by `tests/test_timeline_persistence.py::test_reconstruct_after_restart` | Complete chronological timeline reconstruction; failure provenance |
+| **Abrupt Termination (`SIGKILL`)** | Write-behind trade-off: uncommitted queue events may drop; failure notes for already-observed upstream failures commit with priority. On reboot, startup sweep marks orphaned tasks with a synthetic `gateway.note` ("stream interrupted"). | Verified by `tests/test_gateway_crash.py::test_startup_orphan_sweep_after_crash` | Event loss delta under kill vs. baseline latency overhead; automatic orphan sweep |
 
 *(Deferred to v0.2 milestone: head-to-head latency and throughput bake-off against agentgateway and Envoy + ext-proc).*
 
@@ -217,9 +217,9 @@ All forwarding logic is encapsulated behind the `ProxyBackend` protocol in `app/
 
 A2A Gateway uses asynchronous write-behind persistence to minimize latency on the streaming hot path:
 
-- **Upstream failures & priority commit:** When an upstream agent disconnects, resets its connection, or times out, the gateway stops accepting new upstream events and drains previously captured events from the FIFO queue into PostgreSQL. By default (`SYNC_PERSIST_GATEWAY_NOTES=true`), synthetic forensic `gateway.note` events bypass queue head-of-line blocking and commit immediately to PostgreSQL, guaranteeing diagnosis provenance is durable.
-- **Graceful gateway shutdown:** On `SIGTERM`, the gateway stops accepting new inbound work and executes a 5-second drain loop on pending in-memory events before exiting. This ensures zero data loss on standard container updates or rolling restarts.
-- **Abrupt gateway termination (`SIGKILL`):** An ungraceful process crash or power loss can drop events that remain queued in memory awaiting database write-behind.
+- **Upstream failures & priority commit:** When an upstream agent disconnects, resets its connection, or times out, the gateway stops accepting new upstream events and drains previously captured events from the FIFO queue into PostgreSQL. By default (`SYNC_PERSIST_GATEWAY_NOTES=true`), synthetic forensic `gateway.note` events for already-observed failures bypass queue head-of-line blocking and commit immediately to PostgreSQL, durable when PostgreSQL is reachable.
+- **Graceful gateway shutdown:** On `SIGTERM`, the gateway stops accepting new inbound work and executes a drain loop on pending in-memory events before exiting. Ensures zero data loss on container updates or rolling restarts if the queue drain completes within the timeout (configurable via `DRAIN_TIMEOUT_S`, default: 5.0s).
+- **Abrupt gateway termination (`SIGKILL`) & startup sweep:** An ungraceful process crash or power loss can drop events that remain queued in memory awaiting database write-behind. On reboot, the gateway executes a startup sweep that detects any non-terminal tasks left in-flight, transitions them to `failed`, and appends a synthetic forensic `gateway.note` ("gateway restarted; stream interrupted, events after this point may be lost"), verified by `tests/test_gateway_crash.py`.
 - **Queue backpressure & tail drops:** The in-memory buffer is bounded (`EVENT_QUEUE_MAXSIZE=10000`). If saturated under extreme write loads, events are dropped with `stats["dropped_events"]` incremented. Rather than dropping silently, **both tail drops (the most common backpressure scenario) and interior sequence gaps trigger a visible "Timeline Incomplete" marker on affected tasks**, verified by automated test coverage (`tests/test_timeline_incompleteness.py`).
 - **Redis failure:** Redis is used exclusively for ephemeral dashboard event distribution. Its unavailability does not affect PostgreSQL event durability or upstream proxying.
 - **Database failure (Degraded mode):** Events awaiting persistence cannot be considered durable. When PostgreSQL is unreachable or failing, the gateway prioritizes caller availability by logging write errors and continuing to stream chunks, but timeline history is not persisted (resulting in partial timelines marked as incomplete).
@@ -229,10 +229,11 @@ PostgreSQL is the durable source of truth. The in-memory queue is a performance 
 
 ---
 
-## Security Boundaries & Guarantees
+## Security Boundaries & Threat Model
 
+- **Threat Model:** Fernet encryption protects upstream agent credentials at rest in PostgreSQL against database dumps, storage snapshot leaks, or multi-tenant database access; it does not protect against a compromised host with root access to the runtime memory or environment variables.
 - **Gateway Bearer Keys:** Hashed using bcrypt with prefix tracking (`a2a_live_...`) and cached in-memory for 5 seconds. Revocations invalidate the local cache immediately.
-- **Upstream Agent Credentials (Fernet Encryption at Rest):** Sensitive upstream credentials (e.g., downstream agent API tokens, bearer keys) are encrypted before insertion into PostgreSQL using Fernet symmetric encryption (`enc:v1:...`). Keys are derived from `CREDENTIAL_ENCRYPTION_KEY` or `SECRET_KEY`, and credentials are never returned in plaintext in control plane responses (masked with `••••••••`).
+- **Upstream Agent Credentials (Fernet Encryption at Rest):** Sensitive upstream credentials (e.g., downstream agent API tokens, bearer keys) are encrypted before insertion into PostgreSQL using Fernet symmetric encryption (`enc:v1:...`). Keys are configured via `CREDENTIAL_ENCRYPTION_KEY` or derived from `SECRET_KEY`. Key derivation is decoupled from `ADMIN_KEY` so rotating administrative bearer tokens does not orphan stored credentials. Credentials are never returned in plaintext in control plane responses (masked with `••••••••`).
 - **Enforced Development Key Safeguard:** The default test key (`dev-only-do-not-use-in-prod`) will actively abort gateway startup if bound to any non-loopback network interface (e.g., `0.0.0.0`) unless `ALLOW_INSECURE_DEV_KEY=true` is explicitly provided. This prevents accidental exposure in staging or production environments.
 
 ---
@@ -263,9 +264,9 @@ Designed for teams running hundreds to low-thousands of tasks per minute. Not op
 2. **Standardized Harness:** Run identical test matrices against A2A Gateway, agentgateway, and ContextForge (alongside Envoy with a documented observability setup).
 3. **Failure Isolation:** Test upstream connection termination and hard gateway process crashes (`SIGKILL`) independently.
 4. **Core Evaluation Metrics:**
-   - *Operator Effort (Primary Evaluation Metric):* Time required for an on-call engineer to identify the exact root cause of a failed task from gateway-visible evidence, measured by CLI commands needed, log grep friction across disparate services, and cognitive overhead during 3 AM incident triage.
+   - *Operator Effort (Primary Evaluation Metric):* Measured across a scripted 3 AM failure scenario by (1) time-to-first-root-cause-identification, (2) count of manual CLI commands / log grep invocations required, and (3) accuracy in answering three standard post-mortem triage questions without SSH access: Which upstream step failed? What was the last artifact emitted? Was the caller notified?
    - *Upstream Failure Mode:* Verification of forensic reconstruction time (< 2 min), sequence monotonicity, and partial stream retention under network cuts.
-   - *Ungraceful Crash Mode (`SIGKILL`):* Empirical measurement of in-flight write-behind retention and verification that priority failure notes (`gateway.note`) remain committed.
+   - *Ungraceful Crash Mode (`SIGKILL`):* Empirical measurement of in-flight write-behind retention delta, verification that priority failure notes for already-observed failures remain committed, and verification that orphaned tasks are swept to failed with diagnostic provenance upon reboot.
 5. **Transparent Reporting:** Publish complete results under `scripts/bench/`, explicitly detailing where asynchronous write-behind trades event durability for hot-path latency compared to synchronous byte proxies.
 
 ### Deferred Capabilities (Post-Experiment v0.2+)

@@ -105,8 +105,10 @@ async def test_reconstruct_after_restart(client: AsyncClient, admin_headers: dic
             events = data["events"]
 
             assert task_info["id"] == task_id
-            assert task_info["current_state"] == "working"
-            assert task_info["is_terminal"] is False
+            # Post-restart startup sweep marks orphaned in-flight tasks as terminal failed
+            assert task_info["current_state"] == "failed"
+            assert task_info["is_terminal"] is True
+            assert "stream interrupted" in task_info["error_summary"]
 
             # Verify events list contains the 3 upstream events plus the synthetic gateway.note
             assert len(events) >= 4

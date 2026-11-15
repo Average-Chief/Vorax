@@ -229,7 +229,7 @@ async def stop_writer_task() -> None:
     # Drain remaining queue with 5s timeout
     try:
         start_drain = time.monotonic()
-        while not q.empty() and time.monotonic() - start_drain < 5.0:
+        while not q.empty() and time.monotonic() - start_drain < settings.DRAIN_TIMEOUT_S:
             try:
                 event = q.get_nowait()
                 await process_event(event)
