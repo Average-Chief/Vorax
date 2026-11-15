@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/assets/logo.png" alt="A2A Gateway Logo" width="460" />
+</p>
+
 # A2A Gateway
 
 *The easiest self-hosted way to put all your A2A agents behind one secure, observable endpoint.*
