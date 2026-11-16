@@ -12,6 +12,7 @@ import {
   Copy,
   Check,
   LogOut,
+  BookOpen,
 } from 'lucide-react';
 import { useWs } from './hooks/useWs';
 import { useLiveTasks } from './hooks/useLiveTasks';
@@ -20,6 +21,7 @@ import { TasksPage } from './pages/Tasks';
 import { TimelinePage } from './pages/Timeline';
 import { AgentsPage } from './pages/Agents';
 import { GatewayPage } from './pages/Gateway';
+import { GuidePage } from './pages/Guide';
 import { LoginPage } from './pages/Login';
 import { AgentListItem, GatewayRoute } from './lib/types';
 import { getStoredApiKey, setStoredApiKey, fetchAgents, fetchRoutes } from './lib/api';
@@ -27,7 +29,7 @@ import { isDashboardAuthenticated, logoutDashboard } from './lib/auth';
 import { StateChip } from './components/StateChip';
 import { Logo } from './components/Logo';
 
-type Tab = 'home' | 'tasks' | 'agents' | 'gateway';
+type Tab = 'home' | 'tasks' | 'agents' | 'gateway' | 'guide';
 
 function parseInitialRoute(): { tab: Tab; taskId: string | null } {
   try {
@@ -39,6 +41,7 @@ function parseInitialRoute(): { tab: Tab; taskId: string | null } {
     if (path === '/tasks') return { tab: 'tasks', taskId: null };
     if (path === '/agents') return { tab: 'agents', taskId: null };
     if (path === '/gateway') return { tab: 'gateway', taskId: null };
+    if (path === '/guide') return { tab: 'guide', taskId: null };
   } catch (e) {
     // fallback
   }
@@ -321,6 +324,20 @@ export function App() {
                 {routes.length}
               </span>
             </button>
+            <button
+              onClick={() => {
+                setSelectedTaskId(null);
+                setActiveTab('guide');
+              }}
+              className={`px-2.5 py-1 text-xs font-medium transition-colors border flex items-center gap-1.5 ${
+                activeTab === 'guide'
+                  ? 'bg-neutral-900 text-white border-neutral-700'
+                  : 'text-slate-400 hover:text-white border-transparent'
+              }`}
+            >
+              <BookOpen size={12} className={activeTab === 'guide' ? 'text-blue-400' : 'text-slate-500'} />
+              <span>Guide</span>
+            </button>
           </nav>
         </div>
 
@@ -572,8 +589,16 @@ export function App() {
           <TasksPage onSelectTask={(id) => setSelectedTaskId(id)} />
         ) : activeTab === 'agents' ? (
           <AgentsPage />
-        ) : (
+        ) : activeTab === 'gateway' ? (
           <GatewayPage />
+        ) : (
+          <GuidePage
+            onNavigate={(tab) => {
+              setSelectedTaskId(null);
+              setActiveTab(tab);
+            }}
+            onOpenCli={() => setShowCliModal(true)}
+          />
         )}
       </main>
 
