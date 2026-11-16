@@ -72,11 +72,35 @@ export function ConsoleHome({
   };
 
   const [activeInfoWidget, setActiveInfoWidget] = useState<WidgetInfoKey | null>(null);
-  const [feedbackGiven, setFeedbackGiven] = useState(false);
+  const [feedbackStore, setFeedbackStore] = useState<Record<string, 'yes' | 'no'>>(() => {
+    try {
+      const saved = localStorage.getItem('a2a_widget_feedback');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
 
-  useEffect(() => {
-    setFeedbackGiven(false);
-  }, [activeInfoWidget]);
+  const handleGiveFeedback = (widgetKey: WidgetInfoKey, rating: 'yes' | 'no') => {
+    setFeedbackStore((prev) => {
+      const next = { ...prev, [widgetKey]: rating };
+      try {
+        localStorage.setItem('a2a_widget_feedback', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  const handleClearFeedback = (widgetKey: WidgetInfoKey) => {
+    setFeedbackStore((prev) => {
+      const next = { ...prev };
+      delete next[widgetKey];
+      try {
+        localStorage.setItem('a2a_widget_feedback', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -932,25 +956,36 @@ export function ConsoleHome({
                 ))}
               </div>
 
-              {/* Was this content helpful? (AWS Console Style) */}
+              {/* Was this content helpful? (AWS Console Style - Persisted in localStorage) */}
               <div className="pt-4 border-t border-neutral-800 space-y-2.5">
                 <div className="text-xs font-semibold text-slate-200">Was this content helpful?</div>
-                {feedbackGiven ? (
-                  <div className="text-[11px] text-emerald-400 flex items-center gap-1.5 bg-emerald-950/30 border border-emerald-900/50 p-2 rounded-sm">
-                    <CheckCircle2 size={13} />
-                    <span>Thank you for your feedback!</span>
+                {feedbackStore[activeInfoWidget] ? (
+                  <div className="flex items-center justify-between text-[11px] bg-emerald-950/30 border border-emerald-900/50 p-2 rounded-sm text-emerald-400">
+                    <div className="flex items-center gap-1.5">
+                      <CheckCircle2 size={13} className="text-emerald-400 shrink-0" />
+                      <span>
+                        Thank you for your feedback! ({feedbackStore[activeInfoWidget] === 'yes' ? '👍 Yes' : '👎 No'})
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => handleClearFeedback(activeInfoWidget)}
+                      className="text-[10px] text-slate-500 hover:text-slate-300 underline cursor-pointer ml-2"
+                      title="Change your feedback"
+                    >
+                      Change
+                    </button>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => setFeedbackGiven(true)}
+                      onClick={() => handleGiveFeedback(activeInfoWidget, 'yes')}
                       className="px-3 py-1 bg-neutral-900 hover:bg-neutral-800 text-slate-300 hover:text-white text-xs border border-neutral-700 transition-colors flex items-center gap-1.5 cursor-pointer rounded-sm"
                     >
                       <ThumbsUp size={12} />
                       <span>Yes</span>
                     </button>
                     <button
-                      onClick={() => setFeedbackGiven(true)}
+                      onClick={() => handleGiveFeedback(activeInfoWidget, 'no')}
                       className="px-3 py-1 bg-neutral-900 hover:bg-neutral-800 text-slate-300 hover:text-white text-xs border border-neutral-700 transition-colors flex items-center gap-1.5 cursor-pointer rounded-sm"
                     >
                       <ThumbsDown size={12} />
