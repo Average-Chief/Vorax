@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Bell,
-  Settings,
+  Lock,
   Terminal,
   ChevronDown,
   X,
@@ -447,13 +447,13 @@ export function App() {
             )}
           </div>
 
-          {/* Settings Gear */}
+          {/* Gateway Auth Key & Access Modal */}
           <button
             onClick={() => setShowKeyModal(true)}
             className="p-1.5 text-slate-400 hover:text-white hover:bg-neutral-900 border border-transparent hover:border-neutral-800 transition-colors"
-            title="Gateway Settings & API Key"
+            title="Gateway Authentication & API Key"
           >
-            <Settings size={13} />
+            <Lock size={13} />
           </button>
 
           {/* Real Gateway Node Status Pill (Replaces Dummy Envs) */}
