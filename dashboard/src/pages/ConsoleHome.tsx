@@ -47,7 +47,6 @@ interface WidgetInfoConfig {
   title: string;
   description: string;
   sections: { title: string; content: string }[];
-  learnMoreLinks?: { label: string; action: () => void }[];
 }
 
 export function ConsoleHome({
@@ -109,11 +108,6 @@ export function ConsoleHome({
             'Built-in terminal modal with pre-filled cURL commands to verify live agent responses and SSE streams.',
         },
       ],
-      learnMoreLinks: [
-        { label: 'Provision routes & manage keys', action: () => onNavigate('gateway') },
-        { label: 'Open Gateway Test Shell', action: () => onOpenCli() },
-        { label: 'Read Operator & Console Guide', action: () => onNavigate('guide') },
-      ],
     },
     agents: {
       title: 'Registered Agents',
@@ -135,10 +129,6 @@ export function ConsoleHome({
           content:
             'Agents can be registered or updated programmatically at runtime via the /control/agents API.',
         },
-      ],
-      learnMoreLinks: [
-        { label: 'Manage & register upstream agents', action: () => onNavigate('agents') },
-        { label: 'Configure route bindings', action: () => onNavigate('gateway') },
       ],
     },
     health: {
@@ -162,9 +152,6 @@ export function ConsoleHome({
             'Tasks that finished successfully with all output artifacts preserved.',
         },
       ],
-      learnMoreLinks: [
-        { label: 'Inspect task triage table', action: () => onNavigate('tasks') },
-      ],
     },
     traffic: {
       title: 'Traffic & Telemetry',
@@ -187,9 +174,6 @@ export function ConsoleHome({
             'Streaming chunks are tapped into Redis Pub/Sub and written to PostgreSQL asynchronously without blocking the client.',
         },
       ],
-      learnMoreLinks: [
-        { label: 'View all task records', action: () => onNavigate('tasks') },
-      ],
     },
     live_tasks: {
       title: 'Live Agent Tasks Stream',
@@ -211,9 +195,6 @@ export function ConsoleHome({
           content:
             'If an agent crashes mid-stream, the gateway appends a forensic note detailing the interruption before marking the task complete.',
         },
-      ],
-      learnMoreLinks: [
-        { label: 'Browse full task history', action: () => onNavigate('tasks') },
       ],
     },
     whats_new: {
@@ -241,11 +222,6 @@ export function ConsoleHome({
           content:
             'High-throughput asynchronous message broker enabling zero-copy SSE tapping directly into PostgreSQL.',
         },
-      ],
-      learnMoreLinks: [
-        { label: 'Read operator dashboard guide', action: () => onNavigate('guide') },
-        { label: 'Inspect task triage queue', action: () => onNavigate('tasks') },
-        { label: 'Manage registered routes', action: () => onNavigate('gateway') },
       ],
     },
   };
@@ -983,31 +959,6 @@ export function ConsoleHome({
                   </div>
                 )}
               </div>
-
-              {/* Learn More / Actions */}
-              {WIDGET_INFO[activeInfoWidget].learnMoreLinks && (
-                <div className="pt-4 border-t border-neutral-800 space-y-2">
-                  <div className="text-xs font-bold text-white flex items-center gap-1.5">
-                    <span>Learn more</span>
-                    <ArrowUpRight size={12} className="text-blue-400" />
-                  </div>
-                  <div className="space-y-1 text-xs">
-                    {WIDGET_INFO[activeInfoWidget].learnMoreLinks.map((link, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => {
-                          link.action();
-                          setActiveInfoWidget(null);
-                        }}
-                        className="w-full text-left py-1 text-blue-400 hover:text-orange-400 hover:underline flex items-center justify-between transition-colors group cursor-pointer"
-                      >
-                        <span>{link.label}</span>
-                        <ArrowRight size={11} className="text-neutral-500 group-hover:text-orange-400 transition-colors" />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Footer */}
