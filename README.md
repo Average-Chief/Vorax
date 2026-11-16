@@ -55,7 +55,7 @@ Vorax resolves this by placing your agents behind a single managed gateway. Call
 Run the bundled demo fleet to inspect live agent traffic:
 
 ```bash
-git clone https://github.com/a2a-gateway/a2a-gateway && cd a2a-gateway
+git clone https://github.com/Average-Chief/Vorax.git && cd Vorax
 docker compose --profile demo up
 ```
 
