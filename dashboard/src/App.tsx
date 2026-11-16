@@ -131,32 +131,32 @@ export function App() {
     setTimeout(() => setCopiedSnippet(null), 2000);
   };
 
-  const [readNotificationIds, setReadNotificationIds] = useState<string[]>(() => {
+  const [dismissedNotificationIds, setDismissedNotificationIds] = useState<string[]>(() => {
     try {
-      const saved = localStorage.getItem('a2a_read_notifications');
+      const saved = localStorage.getItem('a2a_dismissed_notifications') || localStorage.getItem('a2a_read_notifications');
       return saved ? JSON.parse(saved) : [];
     } catch (e) {
       return [];
     }
   });
 
-  const markNotificationAsRead = (id: string) => {
-    setReadNotificationIds((prev) => {
+  const dismissNotification = (id: string) => {
+    setDismissedNotificationIds((prev) => {
       if (prev.includes(id)) return prev;
       const next = [...prev, id];
       try {
-        localStorage.setItem('a2a_read_notifications', JSON.stringify(next));
+        localStorage.setItem('a2a_dismissed_notifications', JSON.stringify(next));
       } catch (e) {}
       return next;
     });
   };
 
-  const markAllNotificationsAsRead = () => {
+  const clearAllNotifications = () => {
     const allIds = failedTasks.map((t) => t.id);
-    setReadNotificationIds((prev) => {
+    setDismissedNotificationIds((prev) => {
       const combined = Array.from(new Set([...prev, ...allIds]));
       try {
-        localStorage.setItem('a2a_read_notifications', JSON.stringify(combined));
+        localStorage.setItem('a2a_dismissed_notifications', JSON.stringify(combined));
       } catch (e) {}
       return combined;
     });
@@ -167,7 +167,7 @@ export function App() {
     return ['failed', 'rejected', 'input-required'].includes(s);
   });
 
-  const unreadFailedTasks = failedTasks.filter((t) => !readNotificationIds.includes(t.id));
+  const activeAlerts = failedTasks.filter((t) => !dismissedNotificationIds.includes(t.id));
 
   const toggleNotifications = () => {
     const nextState = !showNotifications;
@@ -175,7 +175,6 @@ export function App() {
     if (nextState) {
       setShowEnvMenu(false);
       setShowUserMenu(false);
-      markAllNotificationsAsRead();
     }
   };
 
@@ -344,9 +343,9 @@ export function App() {
               title="Gateway Alerts"
             >
               <Bell size={13} />
-              {unreadFailedTasks.length > 0 && (
+              {activeAlerts.length > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 bg-rose-600 text-white text-[9px] font-bold px-1 leading-tight rounded-sm">
-                  {unreadFailedTasks.length}
+                  {activeAlerts.length}
                 </span>
               )}
             </button>
@@ -357,71 +356,72 @@ export function App() {
                 <div className="flex items-center justify-between pb-2 border-b border-neutral-800">
                   <div className="flex items-center gap-1.5">
                     <span className="font-bold text-xs text-white">Gateway Notifications</span>
-                    {unreadFailedTasks.length > 0 ? (
+                    {activeAlerts.length > 0 ? (
                       <span className="text-[10px] bg-rose-950 text-rose-300 border border-rose-800 px-1 font-mono">
-                        {unreadFailedTasks.length} new
+                        {activeAlerts.length} active
                       </span>
                     ) : (
-                      <span className="text-[10px] text-slate-500 font-mono">
-                        All read
+                      <span className="text-[10px] text-emerald-400 font-mono">
+                        All clear
                       </span>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    {failedTasks.length > 0 && (
+                    {activeAlerts.length > 0 && (
                       <button
-                        onClick={markAllNotificationsAsRead}
+                        onClick={clearAllNotifications}
                         className="text-[10px] text-slate-400 hover:text-white underline cursor-pointer"
-                        title="Mark all alerts as read"
+                        title="Dismiss all notifications"
                       >
                         Clear badge
                       </button>
                     )}
-                    <button onClick={() => setShowNotifications(false)} className="text-slate-500 hover:text-white">
+                    <button onClick={() => setShowNotifications(false)} className="text-slate-500 hover:text-white cursor-pointer">
                       <X size={12} />
                     </button>
                   </div>
                 </div>
                 <div className="space-y-1.5 max-h-60 overflow-y-auto">
-                  {failedTasks.length > 0 ? (
-                    failedTasks.map((t) => {
-                      const isUnread = !readNotificationIds.includes(t.id);
-                      return (
-                        <div
-                          key={t.id}
-                          className={`p-2 bg-neutral-950 border text-xs space-y-1 transition-colors ${
-                            isUnread ? 'border-rose-900/80 bg-rose-950/20' : 'border-neutral-800/60 opacity-80'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-1.5 text-rose-400 font-medium">
-                              <AlertTriangle size={12} />
-                              <span>3am Test: Transport Failure</span>
-                            </div>
-                            <button
-                              onClick={() => markNotificationAsRead(t.id)}
-                              className="text-slate-500 hover:text-slate-300 p-0.5"
-                              title="Dismiss this notification"
-                            >
-                              <X size={10} />
-                            </button>
+                  {activeAlerts.length > 0 ? (
+                    activeAlerts.map((t) => (
+                      <div
+                        key={t.id}
+                        className="p-2 bg-neutral-950 border border-rose-900/80 bg-rose-950/20 text-xs space-y-1 transition-colors"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5 text-rose-400 font-medium">
+                            <AlertTriangle size={12} />
+                            <span>{t.current_state === 'input-required' ? 'Input Required' : 'Transport / Task Failure'}</span>
                           </div>
-                          <p className="text-[10px] text-slate-400 font-mono truncate">{t.id}</p>
                           <button
-                            onClick={() => {
-                              markNotificationAsRead(t.id);
-                              setSelectedTaskId(t.id);
-                              setShowNotifications(false);
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              dismissNotification(t.id);
                             }}
-                            className="text-[10px] text-indigo-400 hover:underline pt-0.5 block"
+                            className="text-slate-500 hover:text-slate-300 p-0.5 cursor-pointer"
+                            title="Dismiss notification"
                           >
-                            View Forensic Timeline ↗
+                            <X size={10} />
                           </button>
                         </div>
-                      );
-                    })
+                        <p className="text-[10px] text-slate-400 font-mono truncate">{t.id}</p>
+                        {t.error_summary && (
+                          <p className="text-[10px] text-rose-300/80 line-clamp-2">{t.error_summary}</p>
+                        )}
+                        <button
+                          onClick={() => {
+                            dismissNotification(t.id);
+                            setSelectedTaskId(t.id);
+                            setShowNotifications(false);
+                          }}
+                          className="text-[10px] text-indigo-400 hover:underline pt-0.5 block cursor-pointer"
+                        >
+                          View Forensic Timeline ↗
+                        </button>
+                      </div>
+                    ))
                   ) : (
-                    <div className="p-3 text-center text-slate-500 text-xs">
+                    <div className="p-4 text-center text-slate-500 text-xs">
                       All upstream agent streams operating normally.
                     </div>
                   )}
