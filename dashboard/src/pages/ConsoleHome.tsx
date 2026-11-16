@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Rocket,
   Shield,
@@ -783,17 +784,17 @@ export function ConsoleHome({
         </div>
       </div>
 
-      {/* Right-Side Slide-Over Info Panel */}
-      {activeInfoWidget && (
+      {/* Right-Side Slide-Over Info Panel (Portaled to body to prevent container space-y margins) */}
+      {activeInfoWidget && typeof document !== 'undefined' && createPortal(
         <>
           {/* Backdrop */}
           <div
-            className="fixed top-12 inset-x-0 bottom-0 bg-black/50 backdrop-blur-[1px] z-40 transition-opacity"
+            className="fixed top-12 inset-x-0 bottom-0 bg-black/50 backdrop-blur-[1px] z-40 transition-opacity !m-0"
             onClick={() => setActiveInfoWidget(null)}
           />
 
           {/* Drawer: starts flush under the navbar at top-12, left border touching navbar bottom line */}
-          <div className="fixed top-12 bottom-0 right-0 w-80 sm:w-96 bg-[#0c0c0c] border-l border-neutral-800 shadow-2xl z-40 flex flex-col justify-between animate-in slide-in-from-right duration-200">
+          <div className="fixed top-12 bottom-0 right-0 w-80 sm:w-96 bg-[#0c0c0c] border-l border-neutral-800 shadow-2xl z-40 flex flex-col justify-between animate-in slide-in-from-right duration-200 !m-0">
             {/* Header: flush against navbar bottom border */}
             <div className="px-5 py-3 border-b border-neutral-800 flex items-center justify-between shrink-0 bg-neutral-950">
               <div className="flex items-center gap-2">
@@ -893,7 +894,8 @@ export function ConsoleHome({
               </button>
             </div>
           </div>
-        </>
+        </>,
+        document.body
       )}
     </div>
   );
