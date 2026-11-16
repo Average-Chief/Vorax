@@ -29,7 +29,7 @@ logger = logging.getLogger("a2a.gateway")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    logger.info("Initializing A2A Gateway...")
+    logger.info("Initializing Vorax...")
 
     # Enforce non-loopback security check if using default development key
     if settings.ADMIN_KEY == "dev-only-do-not-use-in-prod":
@@ -67,7 +67,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             session.add(admin_key)
             await session.commit()
             logger.info("============================================================")
-            logger.info("A2A Gateway Bootstrap Admin Key: %s", raw_key)
+            logger.info("Vorax Bootstrap Admin Key: %s", raw_key)
             logger.info("Use this key with 'Authorization: Bearer <key>' to access control plane.")
             logger.info("============================================================")
 
@@ -111,13 +111,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     yield
 
-    logger.info("Shutting down A2A Gateway...")
+    logger.info("Shutting down Vorax...")
     await stop_writer_task()
     await engine.dispose()
 
 def create_app() -> FastAPI:
     app = FastAPI(
-        title="A2A Gateway",
+        title="Vorax",
         description="The easiest self-hosted way to put all your A2A agents behind one secure, observable endpoint.",
         version="0.1.0",
         lifespan=lifespan,
@@ -180,7 +180,7 @@ def create_app() -> FastAPI:
         index_file = os.path.join(dist_dir, "index.html")
         if os.path.isfile(index_file):
             return FileResponse(index_file)
-        return {"message": "A2A Gateway API is running. Build dashboard with 'npm run build' in dashboard/ to serve UI."}
+        return {"message": "Vorax API is running. Build dashboard with 'npm run build' in dashboard/ to serve UI."}
 
     return app
 

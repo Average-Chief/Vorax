@@ -8,7 +8,7 @@ interface LogoProps extends React.ImgHTMLAttributes<HTMLImageElement> {
 export const Logo: React.FC<LogoProps> = ({
   className = 'h-6 w-auto',
   size,
-  alt = 'A2A Gateway Logo',
+  alt = 'Vorax Logo',
   ...props
 }) => {
   let sizeClasses = '';

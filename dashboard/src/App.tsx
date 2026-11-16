@@ -245,18 +245,18 @@ export function App() {
       <header className="h-12 bg-black border-b border-neutral-800 px-3 sm:px-4 flex items-center justify-between text-xs select-none sticky top-0 z-50">
         {/* Left Side: Brand Logo + Primary View Tabs */}
         <div className="flex items-center gap-4 sm:gap-6">
-          {/* A2A Gateway Logo */}
+          {/* Vorax Logo */}
           <div
             onClick={() => {
               setSelectedTaskId(null);
               setActiveTab('home');
             }}
             className="flex items-center gap-2.5 cursor-pointer group px-1 py-0.5 hover:bg-neutral-900 transition-colors"
-            title="A2A Gateway Console Home"
+            title="Vorax Console Home"
           >
             <Logo className="h-5 w-auto" />
             <div className="flex items-baseline gap-1.5">
-              <span className="font-bold text-white text-xs tracking-tight">Gateway</span>
+              <span className="font-bold text-white text-xs tracking-tight">Vorax</span>
               <span className="text-[10px] text-slate-500 font-mono">v0.1</span>
             </div>
           </div>
@@ -372,7 +372,7 @@ export function App() {
               <div className="absolute right-0 mt-2 w-80 bg-black border border-neutral-800 shadow-2xl py-3 px-3 z-50 space-y-2">
                 <div className="flex items-center justify-between pb-2 border-b border-neutral-800">
                   <div className="flex items-center gap-1.5">
-                    <span className="font-bold text-xs text-white">Gateway Notifications</span>
+                    <span className="font-bold text-xs text-white">Vorax Notifications</span>
                     {activeAlerts.length > 0 ? (
                       <span className="text-[10px] bg-rose-950 text-rose-300 border border-rose-800 px-1 font-mono">
                         {activeAlerts.length} active
@@ -471,7 +471,7 @@ export function App() {
             {showEnvMenu && (
               <div className="absolute right-0 mt-2 w-72 bg-black border border-neutral-800 shadow-2xl p-3 z-50 text-xs space-y-2">
                 <div className="flex items-center justify-between pb-1.5 border-b border-neutral-800">
-                  <span className="font-bold text-white">Gateway Node Status</span>
+                  <span className="font-bold text-white">Vorax Node Status</span>
                   <span className="text-[10px] text-emerald-400 font-mono">ONLINE</span>
                 </div>
                 <div className="space-y-1 font-mono text-[11px] text-slate-300">
@@ -525,7 +525,7 @@ export function App() {
             {showUserMenu && (
               <div className="absolute right-0 mt-2 w-64 bg-black border border-neutral-800 shadow-2xl py-2 px-3 z-50 text-xs space-y-2">
                 <div className="pb-2 border-b border-neutral-800">
-                  <div className="font-bold text-white">Gateway Administrator</div>
+                  <div className="font-bold text-white">Vorax Administrator</div>
                   <div className="text-[10px] text-slate-500 font-mono">Role: Global Key Admin</div>
                   <div className="text-[10px] text-emerald-400 mt-1 flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 bg-emerald-400" />
@@ -548,7 +548,7 @@ export function App() {
                   }}
                   className="w-full text-left py-1 text-slate-300 hover:text-white text-[11px]"
                 >
-                  Configure Gateway Auth Key
+                  Configure Vorax Auth Key
                 </button>
                 <button
                   onClick={() => {
@@ -559,7 +559,7 @@ export function App() {
                   className="w-full text-left py-1.5 text-rose-400 hover:text-rose-300 text-[11px] flex items-center gap-1.5 border-t border-neutral-800 mt-1 pt-1.5"
                 >
                   <LogOut size={12} />
-                  <span>Sign Out of Gateway</span>
+                  <span>Sign Out of Vorax</span>
                 </button>
               </div>
             )}
@@ -609,7 +609,7 @@ export function App() {
             <div className="flex items-center justify-between pb-2 border-b border-neutral-800">
               <div className="flex items-center gap-2 text-white font-bold">
                 <Terminal size={13} className="text-indigo-400" />
-                <span>Gateway Shell — Test Endpoints & Triggers</span>
+                <span>Vorax Shell — Test Endpoints & Triggers</span>
               </div>
               <button onClick={() => setShowCliModal(false)} className="text-slate-500 hover:text-white">
                 <X size={13} />

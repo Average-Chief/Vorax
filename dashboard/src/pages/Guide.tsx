@@ -48,7 +48,7 @@ export function GuidePage({ onNavigate, onOpenCli }: GuidePageProps) {
             <div className="flex items-center gap-2">
               <BookOpen className="text-blue-400" size={17} />
               <h1 className="text-sm font-bold text-white tracking-tight">
-                A2A Gateway Operator Guide
+                Vorax Operator Guide
               </h1>
               <span className="text-[10px] bg-neutral-900 border border-neutral-800 text-slate-400 px-1.5 py-0.5 font-mono">
                 v0.1.0
@@ -160,7 +160,7 @@ export function GuidePage({ onNavigate, onOpenCli }: GuidePageProps) {
 
           <p className="text-xs text-slate-300 leading-relaxed">
             When an upstream agent crashes mid-stream or resets a socket, traditional proxies emit an unhelpful <code>502 Bad Gateway</code>.
-            A2A Gateway preserves every event before the crash and appends a synthetic <code>gateway.note</code> detailing the failure:
+            Vorax preserves every event before the crash and appends a synthetic <code>gateway.note</code> detailing the failure:
           </p>
 
           {/* Screenshot: Forensic Timeline */}

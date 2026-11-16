@@ -221,9 +221,9 @@ export function ConsoleHome({
       ],
     },
     whats_new: {
-      title: "What's New in A2A Gateway",
+      title: "What's New in Vorax",
       description:
-        'Highlights recent release milestones, protocol enhancements, and architectural upgrades across the A2A Gateway platform.',
+        'Highlights recent release milestones, protocol enhancements, and architectural upgrades across the Vorax platform.',
       sections: [
         {
           title: 'Forensic Event Timeline (v0.1.4)',
@@ -306,7 +306,7 @@ export function ConsoleHome({
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 bg-indigo-500" />
               <h2 className="text-sm font-semibold text-white tracking-tight">
-                A2A Gateway Console • Observability & Telemetry Platform
+                Vorax Console • Observability & Telemetry Platform
               </h2>
             </div>
             <p className="text-xs text-slate-300 leading-relaxed">
