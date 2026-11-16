@@ -7,7 +7,7 @@
 *The easiest self-hosted way to put all your A2A agents behind one secure, observable endpoint.*
 
 <p align="center">
-  <a href="#the-60-second-quickstart"><strong>Quickstart</strong></a> •
+  <a href="#running-a2a-gateway"><strong>Quickstart & Running</strong></a> •
   <a href="#how-callers-connect-python-typescript-or-any-a2a-client"><strong>How Callers Connect</strong></a> •
   <a href="#features"><strong>Features</strong></a> •
   <a href="#what-makes-this-different"><strong>Why It's Different</strong></a> •
@@ -46,7 +46,9 @@ A2A Gateway resolves this by placing your agents behind a single managed gateway
 
 ---
 
-## The 60-second quickstart
+## Running A2A Gateway
+
+### 1. The 60-second quickstart (Demo fleet)
 
 Run the bundled demo fleet to inspect live agent traffic:
 
@@ -66,11 +68,15 @@ Sign in with the default administrator credentials:
 
 The demo profile automatically spins up PostgreSQL, Redis, the gateway API, three demo agents (echo, research, flaky), and a background traffic generator.
 
-To use the gateway with your own upstream agent:
+---
+
+### 2. Standalone gateway (Connecting your own agents)
+
+To run only the core gateway and route traffic to your own upstream agents:
 
 1. **Start the base gateway:**
    ```bash
-   docker compose up
+   docker compose up -d
    ```
 2. **Register your agent and capture its ID:**
    ```bash
@@ -94,6 +100,44 @@ To use the gateway with your own upstream agent:
      -d '{"jsonrpc": "2.0", "id": 1, "method": "message/stream", "params": {"message": {"role": "user", "parts": [{"kind": "text", "text": "start task"}]}}}'
    ```
    Open http://localhost:8000 to watch the live timeline reconstruct in real time.
+
+---
+
+### 3. Local development mode (Without Docker)
+
+To run and modify the backend and frontend locally with live reloading:
+
+```bash
+# 1. Start backing PostgreSQL and Redis services
+docker compose up -d postgres redis
+
+# 2. Setup backend environment and run migrations
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+alembic upgrade head
+
+# 3. Start FastAPI backend with reload
+uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+
+# 4. In a separate terminal, run the React Dashboard (Vite HMR)
+cd dashboard
+npm install
+npm run dev
+# Dashboard available at http://localhost:5173 (configured with reverse proxies to :8000)
+```
+
+---
+
+### 4. Running the test suite
+
+Run the test suite verifying persistence, chaos recovery, and protocol compliance:
+
+```bash
+pytest tests/
+```
+
+---
 
 ### How callers connect (Python, TypeScript, or any A2A client)
 
