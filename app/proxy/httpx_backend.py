@@ -181,6 +181,10 @@ async def fetch_upstream_card(endpoint_url: str) -> dict[str, Any]:
                 resp = await client.get(url)
                 if resp.status_code == 200:
                     return resp.json()
+                elif resp.status_code == 404:
+                    last_error = "HTTP 404 (Endpoint not found)"
+                else:
+                    last_error = f"HTTP {resp.status_code} ({resp.reason_phrase})"
             except Exception as e:
                 last_error = e
         raise RuntimeError(f"Failed to fetch card: {last_error or '404 Not Found'}")

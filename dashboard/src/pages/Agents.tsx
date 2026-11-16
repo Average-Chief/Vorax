@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, RefreshCw, ChevronRight, ChevronDown, Check, Globe, Shield, Route as RouteIcon } from 'lucide-react';
+import { Plus, RefreshCw, ChevronRight, ChevronDown, Check, Globe, Shield, Route as RouteIcon, AlertCircle, AlertTriangle, X } from 'lucide-react';
 import { AgentListItem, GatewayRoute } from '../lib/types';
 import { fetchAgents, registerAgent, fetchRoutes, createRoute } from '../lib/api';
 import { JsonViewer } from '../components/JsonViewer';
@@ -21,6 +21,7 @@ export function AgentsPage() {
   // Route assignment state
   const [routeSegments, setRouteSegments] = useState<Record<string, string>>({});
   const [expandedAgentId, setExpandedAgentId] = useState<string | null>(null);
+  const [routeError, setRouteError] = useState<string | null>(null);
 
   const loadData = async () => {
     try {
@@ -68,11 +69,12 @@ export function AgentsPage() {
     if (!segment) return;
 
     try {
+      setRouteError(null);
       await createRoute({ path_segment: segment, agent_id: agentId });
       setRouteSegments((prev) => ({ ...prev, [agentId]: '' }));
       await loadData();
     } catch (err: any) {
-      alert(`Failed to create route: ${err.message}`);
+      setRouteError(`Failed to bind route /gw/${segment}: ${err.message}`);
     }
   };
 
@@ -108,6 +110,18 @@ export function AgentsPage() {
       {error && (
         <div className="p-3 bg-red-950/30 border border-red-500/40 text-red-300 rounded text-xs">
           {error}
+        </div>
+      )}
+
+      {routeError && (
+        <div className="p-3 bg-rose-950/40 border border-rose-800 text-rose-300 rounded text-xs flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <AlertCircle size={14} className="text-rose-400 shrink-0" />
+            <span>{routeError}</span>
+          </div>
+          <button onClick={() => setRouteError(null)} className="text-slate-400 hover:text-white p-0.5">
+            <X size={12} />
+          </button>
         </div>
       )}
 
@@ -223,8 +237,17 @@ export function AgentsPage() {
             </p>
 
             {dialogError && (
-              <div className="p-2.5 bg-red-950/40 border border-red-500/30 text-red-300 rounded text-xs">
-                {dialogError}
+              <div className="p-3 bg-rose-950/40 border border-rose-800 text-rose-300 rounded text-xs space-y-1">
+                <div className="flex items-center gap-1.5 font-semibold text-rose-200">
+                  <AlertCircle size={14} className="text-rose-400 shrink-0" />
+                  <span>Agent Verification Failed</span>
+                </div>
+                <p className="text-[11px] leading-relaxed text-rose-300/90 pl-5">
+                  {dialogError.replace(/^Failed to fetch agent card from upstream:\s*/i, '')}
+                </p>
+                <div className="pl-5 pt-1 text-[10px] text-slate-400">
+                  The gateway must be able to reach <code className="text-slate-300 font-mono">/.well-known/agent-card.json</code> to register the agent.
+                </div>
               </div>
             )}
 
@@ -236,7 +259,10 @@ export function AgentsPage() {
                   required
                   placeholder="e.g. echo-agent"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    if (dialogError) setDialogError(null);
+                  }}
                   className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded text-xs text-white focus:outline-none focus:border-blue-500"
                 />
               </div>
@@ -246,11 +272,23 @@ export function AgentsPage() {
                 <input
                   type="url"
                   required
-                  placeholder="http://localhost:8102"
+                  placeholder="http://host.docker.internal:8101"
                   value={endpointUrl}
-                  onChange={(e) => setEndpointUrl(e.target.value)}
+                  onChange={(e) => {
+                    setEndpointUrl(e.target.value);
+                    if (dialogError) setDialogError(null);
+                  }}
                   className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded text-xs text-white focus:outline-none focus:border-blue-500 font-mono"
                 />
+                {endpointUrl.includes('localhost') || endpointUrl.includes('127.0.0.1') ? (
+                  <p className="text-[10px] text-amber-400/90 pt-1 leading-normal">
+                    💡 If running in Docker, use <code className="bg-neutral-900 border border-neutral-700 px-1 py-0.2 rounded font-mono text-white">host.docker.internal</code> instead of <code className="font-mono">localhost</code> so the container can connect to your host machine.
+                  </p>
+                ) : (
+                  <span className="text-[10px] text-slate-500 block mt-0.5">
+                    Target base URL of the A2A agent (must serve /.well-known/agent-card.json).
+                  </span>
+                )}
               </div>
 
               <div>

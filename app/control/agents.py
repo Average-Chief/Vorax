@@ -46,9 +46,30 @@ async def get_agent_card_safe(endpoint_url: str) -> dict[str, Any]:
     try:
         return await fetch_upstream_card(endpoint_url)
     except Exception as e:
+        err_str = str(e)
+        # Parse technical socket/network errors into actionable user guidance
+        if any(term in err_str for term in ["Name or service not known", "gaierror", "nodename nor servname provided"]):
+            hint = f"Unable to resolve hostname via DNS. Please check that '{endpoint_url}' has a valid, reachable domain name."
+        elif any(term in err_str for term in ["Connection refused", "ConnectError", "ECONNREFUSED", "connect EPERM"]):
+            if "localhost" in endpoint_url or "127.0.0.1" in endpoint_url:
+                hint = (
+                    f"Connection refused at '{endpoint_url}'. If this agent is running locally on your computer and the gateway is in Docker, "
+                    "use 'http://host.docker.internal:<port>' so Docker can route traffic to your host."
+                )
+            else:
+                hint = f"Connection refused by target server at '{endpoint_url}'. Verify the agent service is running and listening on this port."
+        elif "timed out" in err_str.lower() or "timeout" in err_str.lower():
+            hint = f"Connection to '{endpoint_url}' timed out. Verify network connectivity, firewall settings, and port availability."
+        elif "404" in err_str:
+            hint = f"Target server at '{endpoint_url}' is reachable, but neither /.well-known/agent-card.json nor /.well-known/agent.json returned HTTP 200 (404 Not Found)."
+        elif "json" in err_str.lower() or "decode" in err_str.lower():
+            hint = f"Agent responded at '{endpoint_url}', but the response was not valid JSON."
+        else:
+            hint = err_str
+
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"Failed to fetch agent card from upstream: {e}",
+            detail=f"Failed to fetch agent card from upstream: {hint}",
         )
 
 @router.post("", response_model=AgentDetail, status_code=status.HTTP_201_CREATED)
