@@ -83,10 +83,10 @@ export function LoginPage({ onLoginSuccess, initialMode = 'login' }: LoginPagePr
     <div className="min-h-screen bg-black text-slate-100 flex flex-col justify-center items-center px-4 py-12 selection:bg-neutral-800 selection:text-white">
       <div className="w-full max-w-md space-y-6">
         {/* Brand Header */}
-        <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center gap-2 mb-1">
-            <Logo className="h-9 w-auto" />
-            <span className="text-[10px] text-slate-500 font-mono border border-neutral-800 px-1 py-0.2">v0.1</span>
+        <div className="text-center space-y-3">
+          <div className="inline-flex items-center justify-center gap-2 mb-2">
+            <Logo className="h-12 sm:h-14 w-auto" />
+            <span className="text-[10px] text-slate-500 font-mono border border-neutral-800 px-1 py-0.2 self-end mb-1">v0.1</span>
           </div>
           <h2 className="text-xl font-bold text-white tracking-tight">
             {mode === 'login' ? 'Sign in to Console' : 'Set New Administrator Password'}

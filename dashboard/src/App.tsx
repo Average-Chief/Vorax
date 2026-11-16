@@ -254,7 +254,7 @@ export function App() {
             className="flex items-center gap-2 cursor-pointer group px-1 py-0.5 hover:bg-neutral-900 transition-colors"
             title="Vorax Console Home"
           >
-            <Logo className="h-5 w-auto" />
+            <Logo className="h-7 sm:h-8 w-auto" />
             <span className="text-[10px] text-slate-500 font-mono">v0.1</span>
           </div>
 

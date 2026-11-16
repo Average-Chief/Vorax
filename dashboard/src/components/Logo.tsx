@@ -6,15 +6,15 @@ interface LogoProps extends React.ImgHTMLAttributes<HTMLImageElement> {
 }
 
 export const Logo: React.FC<LogoProps> = ({
-  className = 'h-6 w-auto',
+  className = 'h-8 w-auto',
   size,
   alt = 'Vorax Logo',
   ...props
 }) => {
   let sizeClasses = '';
-  if (size === 'sm') sizeClasses = 'h-5 w-auto';
-  if (size === 'md') sizeClasses = 'h-7 w-auto';
-  if (size === 'lg') sizeClasses = 'h-10 w-auto';
+  if (size === 'sm') sizeClasses = 'h-6 w-auto';
+  if (size === 'md') sizeClasses = 'h-8 w-auto';
+  if (size === 'lg') sizeClasses = 'h-14 w-auto';
 
   return (
     <img

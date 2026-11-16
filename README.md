@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/logo.png" alt="Vorax Logo" width="460" />
+  <img src="docs/assets/logo.png" alt="Vorax Logo" width="560" />
 </p>
 
 # Vorax
