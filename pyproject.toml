@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "The easiest self-hosted way to put all your A2A agents behind one secure, observable endpoint."
 readme = "README.md"
 requires-python = ">=3.11"
-license = {text = "Apache-2.0"}
+license = {text = "MIT"}
 dependencies = [
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.30.0",

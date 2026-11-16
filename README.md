@@ -334,5 +334,5 @@ This is a v0.1 release with a deliberately focused architecture. Please check th
 
 ## License
 
-Apache-2.0. See [LICENSE](LICENSE) for full terms.
+MIT. See [LICENSE](LICENSE) for full terms.
 
