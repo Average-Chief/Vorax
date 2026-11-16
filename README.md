@@ -2,9 +2,11 @@
   <img src="docs/assets/logo.png" alt="Vorax Logo" width="560" />
 </p>
 
-# Vorax
+<h1 align="center">Vorax</h1>
 
-*The easiest self-hosted way to put all your A2A agents behind one secure, observable endpoint.*
+<p align="center">
+  <em>The easiest self-hosted way to put all your A2A agents behind one secure, observable endpoint.</em>
+</p>
 
 <p align="center">
   <a href="#running-vorax"><strong>Quickstart & Running</strong></a> •
