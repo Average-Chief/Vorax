@@ -11,6 +11,8 @@ import {
   Plus,
   Network,
   Key,
+  Info,
+  ArrowRight,
 } from 'lucide-react';
 import { AgentListItem, GatewayRoute, StatsResponse, TaskSummary } from '../lib/types';
 import { fetchAgents, fetchRoutes, fetchStats } from '../lib/api';
@@ -34,6 +36,15 @@ function formatUptime(seconds?: number): string {
   return `${s}s`;
 }
 
+type WidgetInfoKey = 'quickstart' | 'agents' | 'health' | 'traffic' | 'live_tasks';
+
+interface WidgetInfoConfig {
+  title: string;
+  description: string;
+  sections: { title: string; content: string }[];
+  learnMoreLinks?: { label: string; action: () => void }[];
+}
+
 export function ConsoleHome({
   tasks,
   loading,
@@ -54,6 +65,146 @@ export function ConsoleHome({
     try {
       localStorage.setItem('a2a_dismiss_banner', 'true');
     } catch {}
+  };
+
+  const [activeInfoWidget, setActiveInfoWidget] = useState<WidgetInfoKey | null>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setActiveInfoWidget(null);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const WIDGET_INFO: Record<WidgetInfoKey, WidgetInfoConfig> = {
+    quickstart: {
+      title: 'Gateway Quickstart',
+      description:
+        'The Quickstart widget provides direct shortcuts to provision routes, configure secure credentials, and execute test requests against upstream agents.',
+      sections: [
+        {
+          title: 'Route Provisioning',
+          content:
+            'Maps incoming external paths (/gw/:route/) to internal microservices or 3rd-party agent endpoints with zero-touch credential forwarding.',
+        },
+        {
+          title: 'Gateway Authentication',
+          content:
+            'External callers use one unified gateway key. Upstream tokens and credentials remain hidden inside the gateway vault.',
+        },
+        {
+          title: 'CloudShell CLI',
+          content:
+            'Built-in terminal modal with pre-filled cURL commands to verify live agent responses and SSE streams.',
+        },
+      ],
+      learnMoreLinks: [
+        { label: 'Provision routes & manage keys', action: () => onNavigate('gateway') },
+        { label: 'Open Gateway Test Shell', action: () => onOpenCli() },
+      ],
+    },
+    agents: {
+      title: 'Registered Agents',
+      description:
+        'Displays all upstream autonomous agents registered in the gateway control plane along with their target base URLs and authentication types.',
+      sections: [
+        {
+          title: 'Agent Endpoints',
+          content:
+            'The gateway proxies standard A2A JSON-RPC method calls directly to each registered agent base URL.',
+        },
+        {
+          title: 'Credential Injection',
+          content:
+            'The gateway attaches upstream Bearer tokens or Basic auth headers automatically on behalf of callers.',
+        },
+        {
+          title: 'Dynamic Discovery',
+          content:
+            'Agents can be registered or updated programmatically at runtime via the /control/agents API.',
+        },
+      ],
+      learnMoreLinks: [
+        { label: 'Manage & register upstream agents', action: () => onNavigate('agents') },
+        { label: 'Configure route bindings', action: () => onNavigate('gateway') },
+      ],
+    },
+    health: {
+      title: 'Gateway Health & Triage',
+      description:
+        'Provides real-time operational status across all task executions to help operators identify failures immediately without digging through server logs.',
+      sections: [
+        {
+          title: 'Needs Attention',
+          content:
+            'Tasks that entered terminal failed, rejected, or input-required states. Click to inspect the exact point of interruption.',
+        },
+        {
+          title: 'In Flight',
+          content:
+            'Active streaming tasks currently communicating with upstream agents over open SSE sockets.',
+        },
+        {
+          title: 'Completed',
+          content:
+            'Tasks that finished successfully with all output artifacts preserved.',
+        },
+      ],
+      learnMoreLinks: [
+        { label: 'Inspect task triage table', action: () => onNavigate('tasks') },
+      ],
+    },
+    traffic: {
+      title: 'Traffic & Telemetry',
+      description:
+        'Visualizes gateway throughput, process uptime, and task outcome distribution calculated from the append-only event store.',
+      sections: [
+        {
+          title: 'Uptime & Task Throughput',
+          content:
+            'Tracks total cumulative tasks routed through the gateway since the process initialized.',
+        },
+        {
+          title: 'Outcome Distribution',
+          content:
+            'Percentage breakdown comparing completed tasks versus in-flight tasks and transport dropouts.',
+        },
+        {
+          title: 'Zero-Copy SSE Tap',
+          content:
+            'Streaming chunks are tapped into Redis Pub/Sub and written to PostgreSQL asynchronously without blocking the client.',
+        },
+      ],
+      learnMoreLinks: [
+        { label: 'View all task records', action: () => onNavigate('tasks') },
+      ],
+    },
+    live_tasks: {
+      title: 'Live Agent Tasks Stream',
+      description:
+        'A real-time monitor displaying active tasks currently executing across upstream agents. Automatically updates as events arrive over WebSocket.',
+      sections: [
+        {
+          title: 'Active Streams Only',
+          content:
+            'Only tasks that are currently running (in-flight) appear in this feed. When all tasks complete, the feed displays a clean idle state.',
+        },
+        {
+          title: 'Forensic Timeline',
+          content:
+            'Click Timeline on any active task to watch its streaming events, status changes, and partial artifacts arrive live.',
+        },
+        {
+          title: 'Crash Provenance',
+          content:
+            'If an agent crashes mid-stream, the gateway appends a forensic note detailing the interruption before marking the task complete.',
+        },
+      ],
+      learnMoreLinks: [
+        { label: 'Browse full task history', action: () => onNavigate('tasks') },
+      ],
+    },
   };
 
   // Live real data for agents, routes, and stats
@@ -170,8 +321,16 @@ export function ConsoleHome({
         {/* Widget 1: Getting Started & Core Capabilities (col-span-4) */}
         <div className="lg:col-span-4 bg-[#080808] border border-neutral-800 p-4 flex flex-col justify-between hover:border-neutral-700 transition-colors">
           <div>
-            <div className="pb-3 border-b border-neutral-800 mb-3">
-              <h3 className="text-sm font-bold text-white">Gateway Quickstart</h3>
+            <div className="pb-3 border-b border-neutral-800 mb-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold text-white">Gateway Quickstart</h3>
+                <button
+                  onClick={() => setActiveInfoWidget('quickstart')}
+                  className="text-xs text-blue-400 hover:text-blue-300 hover:underline cursor-pointer font-normal"
+                >
+                  Info
+                </button>
+              </div>
             </div>
 
             <div className="space-y-3.5">
@@ -239,9 +398,14 @@ export function ConsoleHome({
         <div className="lg:col-span-5 bg-[#080808] border border-neutral-800 p-4 flex flex-col justify-between hover:border-neutral-700 transition-colors">
           <div>
             <div className="flex items-center justify-between pb-3 border-b border-neutral-800 mb-3">
-              <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 <span>Registered Agents ({agents.length})</span>
-                <span className="text-[11px] text-blue-400 font-normal">fleet</span>
+                <button
+                  onClick={() => setActiveInfoWidget('agents')}
+                  className="text-xs text-blue-400 hover:text-blue-300 hover:underline cursor-pointer font-normal"
+                >
+                  Info
+                </button>
               </h3>
               <button
                 onClick={() => onNavigate('agents')}
@@ -342,9 +506,14 @@ export function ConsoleHome({
         <div className="lg:col-span-3 bg-[#080808] border border-neutral-800 p-4 flex flex-col justify-between hover:border-neutral-700 transition-colors">
           <div>
             <div className="pb-3 border-b border-neutral-800 mb-3">
-              <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 <span>Gateway Health</span>
-                <span className="text-[11px] text-blue-400 font-normal">live</span>
+                <button
+                  onClick={() => setActiveInfoWidget('health')}
+                  className="text-xs text-blue-400 hover:text-blue-300 hover:underline cursor-pointer font-normal"
+                >
+                  Info
+                </button>
               </h3>
             </div>
 
@@ -409,9 +578,14 @@ export function ConsoleHome({
         <div className="lg:col-span-5 bg-[#080808] border border-neutral-800 p-4 flex flex-col justify-between hover:border-neutral-700 transition-colors">
           <div>
             <div className="pb-3 border-b border-neutral-800 mb-3">
-              <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 <span>Traffic & Telemetry</span>
-                <span className="text-[11px] text-blue-400 font-normal">live</span>
+                <button
+                  onClick={() => setActiveInfoWidget('traffic')}
+                  className="text-xs text-blue-400 hover:text-blue-300 hover:underline cursor-pointer font-normal"
+                >
+                  Info
+                </button>
               </h3>
             </div>
 
@@ -522,6 +696,12 @@ export function ConsoleHome({
             <div className="flex items-center justify-between pb-3 border-b border-neutral-800 mb-2">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 <span>Live Agent Tasks Stream</span>
+                <button
+                  onClick={() => setActiveInfoWidget('live_tasks')}
+                  className="text-xs text-blue-400 hover:text-blue-300 hover:underline cursor-pointer font-normal"
+                >
+                  Info
+                </button>
                 {inFlightTasks.length > 0 ? (
                   <span className="flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] bg-emerald-950/80 text-emerald-300 border border-emerald-800 font-mono">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -593,6 +773,90 @@ export function ConsoleHome({
           </div>
         </div>
       </div>
+
+      {/* Right-Side Slide-Over Info Panel */}
+      {activeInfoWidget && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-[1px] z-40 transition-opacity"
+            onClick={() => setActiveInfoWidget(null)}
+          />
+
+          {/* Drawer */}
+          <div className="fixed inset-y-0 right-0 w-80 sm:w-96 bg-[#0a0a0a] border-l border-neutral-800 shadow-2xl z-50 flex flex-col justify-between animate-in slide-in-from-right duration-200">
+            <div className="p-5 overflow-y-auto space-y-5">
+              {/* Header */}
+              <div className="flex items-center justify-between pb-3 border-b border-neutral-800">
+                <div className="flex items-center gap-2">
+                  <Info size={16} className="text-blue-400" />
+                  <h3 className="text-sm font-bold text-white tracking-tight">
+                    {WIDGET_INFO[activeInfoWidget].title}
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setActiveInfoWidget(null)}
+                  className="text-slate-400 hover:text-white p-1 hover:bg-neutral-800 rounded transition-colors cursor-pointer"
+                  title="Close info panel"
+                >
+                  <X size={15} />
+                </button>
+              </div>
+
+              {/* Main Description */}
+              <p className="text-xs text-slate-300 leading-relaxed">
+                {WIDGET_INFO[activeInfoWidget].description}
+              </p>
+
+              {/* Detail Sections */}
+              <div className="space-y-2.5 pt-1">
+                {WIDGET_INFO[activeInfoWidget].sections.map((sec, idx) => (
+                  <div key={idx} className="p-3 bg-neutral-950 border border-neutral-800/80 rounded-sm space-y-1">
+                    <div className="text-xs font-semibold text-slate-200">{sec.title}</div>
+                    <p className="text-[11px] text-slate-400 leading-normal">{sec.content}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Learn More / Actions */}
+              {WIDGET_INFO[activeInfoWidget].learnMoreLinks && (
+                <div className="pt-4 border-t border-neutral-800 space-y-2">
+                  <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <span>Learn more</span>
+                    <ArrowUpRight size={12} className="text-blue-400" />
+                  </div>
+                  <div className="space-y-1 text-xs">
+                    {WIDGET_INFO[activeInfoWidget].learnMoreLinks.map((link, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => {
+                          link.action();
+                          setActiveInfoWidget(null);
+                        }}
+                        className="w-full text-left py-1 text-blue-400 hover:text-orange-400 hover:underline flex items-center justify-between transition-colors group cursor-pointer"
+                      >
+                        <span>{link.label}</span>
+                        <ArrowRight size={11} className="text-neutral-500 group-hover:text-orange-400 transition-colors" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-neutral-800 bg-neutral-950/80 flex items-center justify-between">
+              <span className="text-[10px] text-slate-500 font-mono">A2A Console Telemetry</span>
+              <button
+                onClick={() => setActiveInfoWidget(null)}
+                className="px-3.5 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-white text-xs border border-neutral-700 transition-colors rounded-sm cursor-pointer"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
