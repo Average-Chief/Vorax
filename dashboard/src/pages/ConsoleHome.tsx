@@ -13,6 +13,9 @@ import {
   Key,
   Info,
   ArrowRight,
+  ThumbsUp,
+  ThumbsDown,
+  CheckCircle2,
 } from 'lucide-react';
 import { AgentListItem, GatewayRoute, StatsResponse, TaskSummary } from '../lib/types';
 import { fetchAgents, fetchRoutes, fetchStats } from '../lib/api';
@@ -22,7 +25,7 @@ interface ConsoleHomeProps {
   tasks: TaskSummary[];
   loading: boolean;
   onSelectTask: (taskId: string) => void;
-  onNavigate: (tab: 'home' | 'tasks' | 'agents' | 'gateway') => void;
+  onNavigate: (tab: 'home' | 'tasks' | 'agents' | 'gateway' | 'guide') => void;
   onOpenCli: () => void;
 }
 
@@ -68,6 +71,11 @@ export function ConsoleHome({
   };
 
   const [activeInfoWidget, setActiveInfoWidget] = useState<WidgetInfoKey | null>(null);
+  const [feedbackGiven, setFeedbackGiven] = useState(false);
+
+  useEffect(() => {
+    setFeedbackGiven(false);
+  }, [activeInfoWidget]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -102,6 +110,7 @@ export function ConsoleHome({
       learnMoreLinks: [
         { label: 'Provision routes & manage keys', action: () => onNavigate('gateway') },
         { label: 'Open Gateway Test Shell', action: () => onOpenCli() },
+        { label: 'Read Operator & Console Guide', action: () => onNavigate('guide') },
       ],
     },
     agents: {
@@ -783,26 +792,27 @@ export function ConsoleHome({
             onClick={() => setActiveInfoWidget(null)}
           />
 
-          {/* Drawer */}
-          <div className="fixed top-12 bottom-0 right-0 w-80 sm:w-96 bg-[#0a0a0a] border-l border-neutral-800 shadow-2xl z-40 flex flex-col justify-between animate-in slide-in-from-right duration-200">
-            <div className="p-5 overflow-y-auto space-y-5 flex-1">
-              {/* Header */}
-              <div className="flex items-center justify-between pb-3 border-b border-neutral-800">
-                <div className="flex items-center gap-2">
-                  <Info size={16} className="text-blue-400" />
-                  <h3 className="text-sm font-bold text-white tracking-tight">
-                    {WIDGET_INFO[activeInfoWidget].title}
-                  </h3>
-                </div>
-                <button
-                  onClick={() => setActiveInfoWidget(null)}
-                  className="text-slate-400 hover:text-white p-1 hover:bg-neutral-800 rounded transition-colors cursor-pointer"
-                  title="Close info panel"
-                >
-                  <X size={15} />
-                </button>
+          {/* Drawer: starts flush under the navbar at top-12, left border touching navbar bottom line */}
+          <div className="fixed top-12 bottom-0 right-0 w-80 sm:w-96 bg-[#0c0c0c] border-l border-neutral-800 shadow-2xl z-40 flex flex-col justify-between animate-in slide-in-from-right duration-200">
+            {/* Header: flush against navbar bottom border */}
+            <div className="px-5 py-3 border-b border-neutral-800 flex items-center justify-between shrink-0 bg-neutral-950">
+              <div className="flex items-center gap-2">
+                <Info size={15} className="text-blue-400" />
+                <h3 className="text-sm font-bold text-white tracking-tight">
+                  {WIDGET_INFO[activeInfoWidget].title}
+                </h3>
               </div>
+              <button
+                onClick={() => setActiveInfoWidget(null)}
+                className="text-slate-400 hover:text-white p-1 hover:bg-neutral-800 rounded transition-colors cursor-pointer"
+                title="Close info panel"
+              >
+                <X size={15} />
+              </button>
+            </div>
 
+            {/* Scrollable Content Body */}
+            <div className="p-5 overflow-y-auto space-y-5 flex-1">
               {/* Main Description */}
               <p className="text-xs text-slate-300 leading-relaxed">
                 {WIDGET_INFO[activeInfoWidget].description}
@@ -816,6 +826,34 @@ export function ConsoleHome({
                     <p className="text-[11px] text-slate-400 leading-normal">{sec.content}</p>
                   </div>
                 ))}
+              </div>
+
+              {/* Was this content helpful? (AWS Console Style) */}
+              <div className="pt-4 border-t border-neutral-800 space-y-2.5">
+                <div className="text-xs font-semibold text-slate-200">Was this content helpful?</div>
+                {feedbackGiven ? (
+                  <div className="text-[11px] text-emerald-400 flex items-center gap-1.5 bg-emerald-950/30 border border-emerald-900/50 p-2 rounded-sm">
+                    <CheckCircle2 size={13} />
+                    <span>Thank you for your feedback!</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setFeedbackGiven(true)}
+                      className="px-3 py-1 bg-neutral-900 hover:bg-neutral-800 text-slate-300 hover:text-white text-xs border border-neutral-700 transition-colors flex items-center gap-1.5 cursor-pointer rounded-sm"
+                    >
+                      <ThumbsUp size={12} />
+                      <span>Yes</span>
+                    </button>
+                    <button
+                      onClick={() => setFeedbackGiven(true)}
+                      className="px-3 py-1 bg-neutral-900 hover:bg-neutral-800 text-slate-300 hover:text-white text-xs border border-neutral-700 transition-colors flex items-center gap-1.5 cursor-pointer rounded-sm"
+                    >
+                      <ThumbsDown size={12} />
+                      <span>No</span>
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Learn More / Actions */}
@@ -845,7 +883,7 @@ export function ConsoleHome({
             </div>
 
             {/* Footer */}
-            <div className="p-4 border-t border-neutral-800 bg-neutral-950/80 flex items-center justify-between">
+            <div className="p-3.5 border-t border-neutral-800 bg-neutral-950 flex items-center justify-between shrink-0">
               <span className="text-[10px] text-slate-500 font-mono">A2A Console Telemetry</span>
               <button
                 onClick={() => setActiveInfoWidget(null)}
