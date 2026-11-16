@@ -17,6 +17,7 @@ import {
   ThumbsUp,
   ThumbsDown,
   CheckCircle2,
+  Sparkles,
 } from 'lucide-react';
 import { AgentListItem, GatewayRoute, StatsResponse, TaskSummary } from '../lib/types';
 import { fetchAgents, fetchRoutes, fetchStats } from '../lib/api';
@@ -40,7 +41,7 @@ function formatUptime(seconds?: number): string {
   return `${s}s`;
 }
 
-type WidgetInfoKey = 'quickstart' | 'agents' | 'health' | 'traffic' | 'live_tasks';
+type WidgetInfoKey = 'quickstart' | 'agents' | 'health' | 'traffic' | 'live_tasks' | 'whats_new';
 
 interface WidgetInfoConfig {
   title: string;
@@ -213,6 +214,38 @@ export function ConsoleHome({
       ],
       learnMoreLinks: [
         { label: 'Browse full task history', action: () => onNavigate('tasks') },
+      ],
+    },
+    whats_new: {
+      title: "What's New in A2A Gateway",
+      description:
+        'Highlights recent release milestones, protocol enhancements, and architectural upgrades across the A2A Gateway platform.',
+      sections: [
+        {
+          title: 'Forensic Event Timeline (v0.1.4)',
+          content:
+            'Deep inspection into task executions with live SSE stream replay, token counters, tool provenance, and step-level forensics.',
+        },
+        {
+          title: 'Dynamic Route Proxy (v0.1.3)',
+          content:
+            'Zero-touch reverse proxying for /gw/:route paths with vault-backed Bearer credential and header forwarding.',
+        },
+        {
+          title: 'CloudShell CLI Test Runner (v0.1.2)',
+          content:
+            'Interactive terminal modal to run test cURL requests against upstream agent endpoints with zero setup.',
+        },
+        {
+          title: 'A2A JSON-RPC 2.0 & Redis Pub/Sub (v0.1.1)',
+          content:
+            'High-throughput asynchronous message broker enabling zero-copy SSE tapping directly into PostgreSQL.',
+        },
+      ],
+      learnMoreLinks: [
+        { label: 'Read operator dashboard guide', action: () => onNavigate('guide') },
+        { label: 'Inspect task triage queue', action: () => onNavigate('tasks') },
+        { label: 'Manage registered routes', action: () => onNavigate('gateway') },
       ],
     },
   };
@@ -582,10 +615,10 @@ export function ConsoleHome({
         </div>
       </div>
 
-      {/* 4. Bottom Row Widgets: Traffic & Latency + Live Feed */}
+      {/* 4. Bottom Row Widgets: Traffic & Latency + Live Feed + What's New */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        {/* Widget 4: Traffic & Telemetry Explorer (col-span-5) - Real Live Stats */}
-        <div className="lg:col-span-5 bg-[#080808] border border-neutral-800 p-4 flex flex-col justify-between hover:border-neutral-700 transition-colors">
+        {/* Widget 4: Traffic & Telemetry Explorer (col-span-4) - Real Live Stats */}
+        <div className="lg:col-span-4 bg-[#080808] border border-neutral-800 p-4 flex flex-col justify-between hover:border-neutral-700 transition-colors">
           <div>
             <div className="pb-3 border-b border-neutral-800 mb-3">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
@@ -599,40 +632,30 @@ export function ConsoleHome({
               </h3>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
-              {/* Left Column: Real Metrics Summary */}
-              <div className="sm:col-span-5 space-y-3">
+            <div className="space-y-3.5">
+              {/* 3 Core Telemetry Metrics */}
+              <div className="grid grid-cols-3 gap-2 pb-1">
                 <div>
-                  <div className="text-[11px] text-slate-400">Total Tasks Handled</div>
-                  <div className="text-lg font-bold text-white flex items-center gap-1.5 pt-0.5">
-                    <span>{tasks.length}</span>
-                    <span className="text-[10px] text-slate-400 font-mono">
-                      ({stats ? formatUptime(stats.uptime_seconds) : 'live'} uptime)
-                    </span>
-                  </div>
+                  <div className="text-[10px] text-slate-400">Total Tasks</div>
+                  <div className="text-base font-bold text-white pt-0.5">{tasks.length}</div>
+                  <div className="text-[10px] text-slate-500 font-mono truncate">{stats ? formatUptime(stats.uptime_seconds) : 'live'}</div>
                 </div>
-
                 <div>
-                  <div className="text-[11px] text-slate-400">Live Throughput</div>
-                  <div className="text-sm font-semibold text-white flex items-center gap-1.5 pt-0.5">
+                  <div className="text-[10px] text-slate-400">Throughput</div>
+                  <div className="text-base font-bold text-white pt-0.5 flex items-baseline gap-1">
                     <span className="font-mono">{stats?.events_per_sec ?? 0}</span>
-                    <span className="text-[11px] text-blue-400 font-mono">ev/s</span>
+                    <span className="text-[10px] text-blue-400 font-mono">ev/s</span>
                   </div>
                 </div>
-
                 <div>
-                  <div className="text-[11px] text-slate-400">Total Events Ingested</div>
-                  <div className="text-sm font-semibold text-emerald-400 flex items-center gap-1.5 pt-0.5 font-mono">
-                    <span>{stats?.total_events ?? 0}</span>
-                    <span className="text-[10px] text-slate-500 font-normal">
-                      ({stats?.dropped_events ?? 0} dropped)
-                    </span>
-                  </div>
+                  <div className="text-[10px] text-slate-400">Total Events</div>
+                  <div className="text-base font-bold text-emerald-400 pt-0.5 font-mono">{stats?.total_events ?? 0}</div>
+                  <div className="text-[10px] text-slate-500 font-mono">{stats?.dropped_events ?? 0} drop</div>
                 </div>
               </div>
 
-              {/* Right Column: Real Task State Distribution Bar */}
-              <div className="sm:col-span-7">
+              {/* Real Task State Distribution Bar & Legend */}
+              <div className="border-t border-neutral-800 pt-2.5">
                 <div className="text-[10px] text-slate-400 text-right mb-1">Task State Distribution</div>
                 
                 {/* Horizontal Segmented Bar */}
@@ -700,8 +723,8 @@ export function ConsoleHome({
           </div>
         </div>
 
-        {/* Widget 5: Live Tasks Feed (col-span-7) */}
-        <div className="lg:col-span-7 bg-[#080808] border border-neutral-800 p-4 flex flex-col justify-between hover:border-neutral-700 transition-colors">
+        {/* Widget 5: Live Tasks Feed (col-span-5) */}
+        <div className="lg:col-span-5 bg-[#080808] border border-neutral-800 p-4 flex flex-col justify-between hover:border-neutral-700 transition-colors">
           <div>
             <div className="flex items-center justify-between pb-3 border-b border-neutral-800 mb-2">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
@@ -780,6 +803,110 @@ export function ConsoleHome({
                 ))
               )}
             </div>
+          </div>
+        </div>
+
+        {/* Widget 6: What's New (col-span-3) - Platform updates & feature release notes */}
+        <div className="lg:col-span-3 bg-[#080808] border border-neutral-800 p-4 flex flex-col justify-between hover:border-neutral-700 transition-colors">
+          <div>
+            <div className="flex items-center justify-between pb-3 border-b border-neutral-800 mb-3">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <Sparkles size={14} className="text-amber-400" />
+                <span>What's New</span>
+                <button
+                  onClick={() => setActiveInfoWidget('whats_new')}
+                  className="text-xs text-blue-400 hover:text-blue-300 hover:underline cursor-pointer font-normal"
+                >
+                  Info
+                </button>
+              </h3>
+              <button
+                onClick={() => onNavigate('guide')}
+                className="text-[11px] text-blue-400 hover:text-orange-400 font-medium flex items-center gap-1 group transition-colors"
+              >
+                <span className="underline underline-offset-2 decoration-neutral-600 group-hover:decoration-orange-400">View Guide</span>
+                <ArrowUpRight size={10} className="group-hover:text-orange-400" />
+              </button>
+            </div>
+
+            {/* Updates List */}
+            <div className="space-y-3">
+              {/* Item 1 */}
+              <div
+                className="group cursor-pointer space-y-1"
+                onClick={() => onNavigate('guide')}
+              >
+                <div className="flex items-center justify-between text-[10px]">
+                  <span className="font-bold px-1.5 py-0.2 bg-emerald-950 text-emerald-300 border border-emerald-800 font-mono">
+                    NEW
+                  </span>
+                  <span className="text-slate-500 font-mono">v0.1.4</span>
+                </div>
+                <div className="text-xs font-semibold text-slate-200 group-hover:text-orange-400 flex items-center gap-1 transition-colors">
+                  <span className="underline underline-offset-2 decoration-neutral-700 group-hover:decoration-orange-400">
+                    Forensic Event Timeline
+                  </span>
+                  <ArrowUpRight size={10} className="opacity-70 group-hover:text-orange-400" />
+                </div>
+                <p className="text-[11px] text-slate-400 leading-normal">
+                  Sub-second event tracing, step inspector, partial artifact preview, and crash provenance.
+                </p>
+              </div>
+
+              {/* Item 2 */}
+              <div
+                className="group cursor-pointer space-y-1 pt-2.5 border-t border-neutral-800/80"
+                onClick={() => onNavigate('gateway')}
+              >
+                <div className="flex items-center justify-between text-[10px]">
+                  <span className="font-bold px-1.5 py-0.2 bg-blue-950 text-blue-300 border border-blue-800 font-mono">
+                    FEATURE
+                  </span>
+                  <span className="text-slate-500 font-mono">v0.1.3</span>
+                </div>
+                <div className="text-xs font-semibold text-slate-200 group-hover:text-orange-400 flex items-center gap-1 transition-colors">
+                  <span className="underline underline-offset-2 decoration-neutral-700 group-hover:decoration-orange-400">
+                    Dynamic Route Proxying
+                  </span>
+                  <ArrowUpRight size={10} className="opacity-70 group-hover:text-orange-400" />
+                </div>
+                <p className="text-[11px] text-slate-400 leading-normal">
+                  Configure custom path bindings (<code className="text-slate-300 font-mono text-[10px]">/gw/:route</code>) with header injection.
+                </p>
+              </div>
+
+              {/* Item 3 */}
+              <div
+                className="group cursor-pointer space-y-1 pt-2.5 border-t border-neutral-800/80"
+                onClick={onOpenCli}
+              >
+                <div className="flex items-center justify-between text-[10px]">
+                  <span className="font-bold px-1.5 py-0.2 bg-amber-950 text-amber-300 border border-amber-800 font-mono">
+                    TOOL
+                  </span>
+                  <span className="text-slate-500 font-mono">v0.1.2</span>
+                </div>
+                <div className="text-xs font-semibold text-slate-200 group-hover:text-orange-400 flex items-center gap-1 transition-colors">
+                  <span className="underline underline-offset-2 decoration-neutral-700 group-hover:decoration-orange-400">
+                    CloudShell CLI & Terminal
+                  </span>
+                  <ArrowUpRight size={10} className="opacity-70 group-hover:text-orange-400" />
+                </div>
+                <p className="text-[11px] text-slate-400 leading-normal">
+                  Built-in test runner with pre-filled cURL commands to verify JSON-RPC methods and SSE streams.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-3 border-t border-neutral-800 mt-3 text-right">
+            <button
+              onClick={() => onNavigate('guide')}
+              className="text-xs text-blue-400 hover:text-orange-400 font-medium inline-flex items-center gap-1 group transition-colors"
+            >
+              <span className="underline underline-offset-2 decoration-neutral-600 group-hover:decoration-orange-400">Read Operator Guide</span>
+              <ArrowUpRight size={11} className="group-hover:text-orange-400" />
+            </button>
           </div>
         </div>
       </div>
