@@ -84,13 +84,12 @@ export function LoginPage({ onLoginSuccess, initialMode = 'login' }: LoginPagePr
       <div className="w-full max-w-md space-y-6">
         {/* Brand Header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center gap-3 mb-1">
-            <Logo className="h-8 w-auto" />
-            <span className="font-bold text-lg text-white tracking-tight">Vorax Console</span>
+          <div className="inline-flex items-center justify-center gap-2 mb-1">
+            <Logo className="h-9 w-auto" />
             <span className="text-[10px] text-slate-500 font-mono border border-neutral-800 px-1 py-0.2">v0.1</span>
           </div>
           <h2 className="text-xl font-bold text-white tracking-tight">
-            {mode === 'login' ? 'Sign in to Vorax' : 'Set New Administrator Password'}
+            {mode === 'login' ? 'Sign in to Console' : 'Set New Administrator Password'}
           </h2>
           <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
             {mode === 'login'
