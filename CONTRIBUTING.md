@@ -29,3 +29,4 @@ npm run build
 2. **Include tests**: Add unit or integration tests under `tests/` covering new endpoints, state transitions, or durability logic.
 3. **CI Gate**: All incoming PRs run automated tests against backend test suites and frontend builds via GitHub Actions.
 4. **Maintain compatibility**: Do not break existing A2A JSON-RPC protocol proxying or forensic event retention guarantees.
+

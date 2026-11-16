@@ -56,3 +56,4 @@ jobs:
       - name: Typecheck and build dashboard
         working-directory: dashboard
         run: npm run build
+
