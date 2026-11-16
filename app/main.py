@@ -171,7 +171,7 @@ def create_app() -> FastAPI:
     if os.path.isdir(assets_dir):
         app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
 
-    @app.get("/{full_path:path}")
+    @app.api_route("/{full_path:path}", methods=["GET", "HEAD"])
     async def spa_fallback(full_path: str):
         if full_path:
             target_file = os.path.join(dist_dir, full_path)
