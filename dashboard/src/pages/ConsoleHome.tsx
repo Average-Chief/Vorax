@@ -17,7 +17,6 @@ import {
   ThumbsUp,
   ThumbsDown,
   CheckCircle2,
-  Sparkles,
 } from 'lucide-react';
 import { AgentListItem, GatewayRoute, StatsResponse, TaskSummary } from '../lib/types';
 import { fetchAgents, fetchRoutes, fetchStats } from '../lib/api';
@@ -127,9 +126,9 @@ export function ConsoleHome({
             'External callers use one unified gateway key. Upstream tokens and credentials remain hidden inside the gateway vault.',
         },
         {
-          title: 'CloudShell CLI',
+          title: 'Endpoint Test Recipes',
           content:
-            'Built-in terminal modal with pre-filled cURL commands to verify live agent responses and SSE streams.',
+            'Modal dialog providing pre-filled cURL command recipes to test live agent responses and SSE streams.',
         },
       ],
     },
@@ -237,9 +236,9 @@ export function ConsoleHome({
             'Zero-touch reverse proxying for /gw/:route paths with vault-backed Bearer credential and header forwarding.',
         },
         {
-          title: 'CloudShell CLI Test Runner (v0.1.2)',
+          title: 'Operator Guide & Reference',
           content:
-            'Interactive terminal modal to run test cURL requests against upstream agent endpoints with zero setup.',
+            'Interactive console manual, architectural flow diagrams, and cURL command recipes for upstream testing.',
         },
         {
           title: 'A2A JSON-RPC 2.0 & Redis Pub/Sub (v0.1.1)',
@@ -811,7 +810,6 @@ export function ConsoleHome({
           <div>
             <div className="flex items-center justify-between pb-3 border-b border-neutral-800 mb-3">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <Sparkles size={14} className="text-amber-400" />
                 <span>What's New</span>
                 <button
                   onClick={() => setActiveInfoWidget('whats_new')}
@@ -878,22 +876,22 @@ export function ConsoleHome({
               {/* Item 3 */}
               <div
                 className="group cursor-pointer space-y-1 pt-2.5 border-t border-neutral-800/80"
-                onClick={onOpenCli}
+                onClick={() => onNavigate('guide')}
               >
                 <div className="flex items-center justify-between text-[10px]">
-                  <span className="font-bold px-1.5 py-0.2 bg-amber-950 text-amber-300 border border-amber-800 font-mono">
-                    TOOL
+                  <span className="font-bold px-1.5 py-0.2 bg-purple-950 text-purple-300 border border-purple-800 font-mono">
+                    DOCS
                   </span>
-                  <span className="text-slate-500 font-mono">v0.1.2</span>
+                  <span className="text-slate-500 font-mono">Guide</span>
                 </div>
                 <div className="text-xs font-semibold text-slate-200 group-hover:text-orange-400 flex items-center gap-1 transition-colors">
                   <span className="underline underline-offset-2 decoration-neutral-700 group-hover:decoration-orange-400">
-                    CloudShell CLI & Terminal
+                    Operator Guide & Manual
                   </span>
                   <ArrowUpRight size={10} className="opacity-70 group-hover:text-orange-400" />
                 </div>
                 <p className="text-[11px] text-slate-400 leading-normal">
-                  Built-in test runner with pre-filled cURL commands to verify JSON-RPC methods and SSE streams.
+                  Step-by-step console guide, route testing examples, and forensic pipeline architecture.
                 </p>
               </div>
             </div>
@@ -964,7 +962,7 @@ export function ConsoleHome({
                     <div className="flex items-center gap-1.5">
                       <CheckCircle2 size={13} className="text-emerald-400 shrink-0" />
                       <span>
-                        Thank you for your feedback! ({feedbackStore[activeInfoWidget] === 'yes' ? '👍 Yes' : '👎 No'})
+                        Thank you for your feedback! ({feedbackStore[activeInfoWidget] === 'yes' ? 'Yes' : 'No'})
                       </span>
                     </div>
                     <button
