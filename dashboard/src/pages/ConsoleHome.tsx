@@ -779,13 +779,13 @@ export function ConsoleHome({
         <>
           {/* Backdrop */}
           <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-[1px] z-40 transition-opacity"
+            className="fixed top-12 inset-x-0 bottom-0 bg-black/50 backdrop-blur-[1px] z-40 transition-opacity"
             onClick={() => setActiveInfoWidget(null)}
           />
 
           {/* Drawer */}
-          <div className="fixed inset-y-0 right-0 w-80 sm:w-96 bg-[#0a0a0a] border-l border-neutral-800 shadow-2xl z-50 flex flex-col justify-between animate-in slide-in-from-right duration-200">
-            <div className="p-5 overflow-y-auto space-y-5">
+          <div className="fixed top-12 bottom-0 right-0 w-80 sm:w-96 bg-[#0a0a0a] border-l border-neutral-800 shadow-2xl z-40 flex flex-col justify-between animate-in slide-in-from-right duration-200">
+            <div className="p-5 overflow-y-auto space-y-5 flex-1">
               {/* Header */}
               <div className="flex items-center justify-between pb-3 border-b border-neutral-800">
                 <div className="flex items-center gap-2">
