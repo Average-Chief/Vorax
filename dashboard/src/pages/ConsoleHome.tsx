@@ -42,7 +42,6 @@ export function ConsoleHome({
   onOpenCli,
 }: ConsoleHomeProps) {
   const [showBanner, setShowBanner] = useState(true);
-  const [activeTasksTab, setActiveTasksTab] = useState<'needs_attention' | 'in_flight' | 'terminal' | 'all'>('needs_attention');
 
   // Live real data for agents, routes, and stats
   const [agents, setAgents] = useState<AgentListItem[]>([]);
@@ -77,15 +76,6 @@ export function ConsoleHome({
   });
   const inFlightTasks = tasks.filter((t) => !t.is_terminal);
   const completedTasks = tasks.filter((t) => t.is_terminal && !failedTasks.includes(t));
-
-  const displayedTasks =
-    activeTasksTab === 'needs_attention'
-      ? failedTasks
-      : activeTasksTab === 'in_flight'
-      ? inFlightTasks
-      : activeTasksTab === 'terminal'
-      ? completedTasks
-      : tasks;
 
   // Real distribution calculations
   const totalTasksCount = tasks.length;
@@ -517,84 +507,51 @@ export function ConsoleHome({
         <div className="lg:col-span-7 bg-[#080808] border border-neutral-800 p-4 flex flex-col justify-between hover:border-neutral-700 transition-colors">
           <div>
             <div className="flex items-center justify-between pb-3 border-b border-neutral-800 mb-2">
-              <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 <span>Live Agent Tasks Stream</span>
-                <span className="text-[11px] text-blue-400 font-normal">triage</span>
+                {inFlightTasks.length > 0 ? (
+                  <span className="flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] bg-emerald-950/80 text-emerald-300 border border-emerald-800 font-mono">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    {inFlightTasks.length} active
+                  </span>
+                ) : (
+                  <span className="text-[10px] text-slate-500 font-mono">0 active</span>
+                )}
               </h3>
               <button
                 onClick={() => onNavigate('tasks')}
                 className="text-xs text-blue-400 hover:text-orange-400 font-medium flex items-center gap-1 group transition-colors"
               >
-                <span className="underline underline-offset-2 decoration-neutral-600 group-hover:decoration-orange-400">View Full Table</span>
+                <span className="underline underline-offset-2 decoration-neutral-600 group-hover:decoration-orange-400">View All Tasks</span>
                 <ArrowUpRight size={11} className="group-hover:text-orange-400" />
               </button>
             </div>
 
             <p className="text-[11px] text-slate-400 mb-3">
-              Real-time tasks ordered by triage priority: failed tasks needing attention first, active streams second, terminal third.
+              Real-time tasks currently streaming and being processed by upstream agents.
             </p>
 
-            {/* Filter Tabs */}
-            <div className="flex items-center gap-4 border-b border-neutral-800 text-xs mb-3">
-              <button
-                onClick={() => setActiveTasksTab('needs_attention')}
-                className={`pb-2 font-medium transition-colors border-b-2 flex items-center gap-1.5 ${
-                  activeTasksTab === 'needs_attention'
-                    ? 'border-rose-500 text-rose-400'
-                    : 'border-transparent text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <span>Needs Attention ({failedTasks.length})</span>
-              </button>
-
-              <button
-                onClick={() => setActiveTasksTab('in_flight')}
-                className={`pb-2 font-medium transition-colors border-b-2 flex items-center gap-1.5 ${
-                  activeTasksTab === 'in_flight'
-                    ? 'border-blue-500 text-blue-400'
-                    : 'border-transparent text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <span>In Flight ({inFlightTasks.length})</span>
-              </button>
-
-              <button
-                onClick={() => setActiveTasksTab('terminal')}
-                className={`pb-2 font-medium transition-colors border-b-2 flex items-center gap-1.5 ${
-                  activeTasksTab === 'terminal'
-                    ? 'border-emerald-500 text-emerald-400'
-                    : 'border-transparent text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <span>Completed ({completedTasks.length})</span>
-              </button>
-
-              <button
-                onClick={() => setActiveTasksTab('all')}
-                className={`pb-2 font-medium transition-colors border-b-2 flex items-center gap-1.5 ${
-                  activeTasksTab === 'all'
-                    ? 'border-indigo-500 text-indigo-400'
-                    : 'border-transparent text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <span>All ({tasks.length})</span>
-              </button>
-            </div>
-
-            {/* Tasks List */}
-            <div className="space-y-1 max-h-52 overflow-y-auto pr-1">
-              {displayedTasks.length === 0 ? (
-                <div className="py-8 text-center text-xs text-slate-500">
-                  No tasks matching the selected filter.
+            {/* Live Tasks List */}
+            <div className="space-y-1 max-h-56 overflow-y-auto pr-1">
+              {inFlightTasks.length === 0 ? (
+                <div className="py-12 text-center text-xs text-slate-500 flex flex-col items-center justify-center gap-2">
+                  <div className="flex items-center gap-2 text-slate-400">
+                    <span className="w-2 h-2 rounded-full bg-slate-600" />
+                    <span className="font-medium">No live active tasks in flight.</span>
+                  </div>
+                  <span className="text-[11px] text-slate-600 font-mono">
+                    Inbound agent JSON-RPC streams will appear here in real time.
+                  </span>
                 </div>
               ) : (
-                displayedTasks.slice(0, 5).map((t) => (
+                inFlightTasks.map((t) => (
                   <div
                     key={t.id}
                     onClick={() => onSelectTask(t.id)}
                     className="flex items-center justify-between py-2 px-1 hover:bg-neutral-900/60 border-b border-neutral-900/80 cursor-pointer transition-colors group"
                   >
                     <div className="flex items-center gap-2.5 overflow-hidden">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" title="Stream in flight" />
                       <StateChip state={t.current_state} />
                       <div className="truncate">
                         <div className="text-xs font-mono text-slate-200 group-hover:text-orange-400 transition-colors truncate max-w-[200px] sm:max-w-[320px]">
