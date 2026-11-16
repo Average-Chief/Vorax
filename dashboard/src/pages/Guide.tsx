@@ -596,3 +596,4 @@ with httpx.stream("POST", GATEWAY_URL, json=payload, headers=headers, timeout=60
     </div>
   );
 }
+
