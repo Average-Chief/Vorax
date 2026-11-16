@@ -41,7 +41,20 @@ export function ConsoleHome({
   onNavigate,
   onOpenCli,
 }: ConsoleHomeProps) {
-  const [showBanner, setShowBanner] = useState(true);
+  const [showBanner, setShowBanner] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('a2a_dismiss_banner') !== 'true';
+    } catch {
+      return true;
+    }
+  });
+
+  const handleDismissBanner = () => {
+    setShowBanner(false);
+    try {
+      localStorage.setItem('a2a_dismiss_banner', 'true');
+    } catch {}
+  };
 
   // Live real data for agents, routes, and stats
   const [agents, setAgents] = useState<AgentListItem[]>([]);
@@ -89,8 +102,8 @@ export function ConsoleHome({
       {showBanner && (
         <div className="relative bg-[#080808] border border-neutral-800 p-4 shadow-sm">
           <button
-            onClick={() => setShowBanner(false)}
-            className="absolute top-3 right-3 text-neutral-500 hover:text-white p-1 hover:bg-neutral-800 transition-colors"
+            onClick={handleDismissBanner}
+            className="absolute top-3 right-3 text-neutral-500 hover:text-white p-1 hover:bg-neutral-800 transition-colors cursor-pointer"
             title="Dismiss"
           >
             <X size={15} />
